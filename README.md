@@ -62,7 +62,24 @@ npm run dev
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開き、結果を確認してください。
 
-## Vercel へのデプロイ
+## プルリクエストのテンプレート
 
-このプロジェクトは [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) にデプロイするように最適化されています。
-詳細は [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) を参照してください。
+プルリクエストを作成する際は、以下のテンプレートをコピーして概要欄に貼り付けてください。
+
+```markdown
+## 概要
+(今回の変更の目的や、解決する課題を簡潔に書いてください)
+
+## 実装内容
+- (行った変更を箇条書きで書いてください)
+- 
+- 
+
+## 動作確認
+- [ ] ローカル環境で `npm run dev` を実行し、正しく動作することを確認した
+- [ ] `npm run lint` を実行し、エラーがないことを確認した
+- [ ] (その他、確認した項目があれば追記してください)
+
+## 相談・メモ
+(実装で迷った点や、レビューで特に見てほしい点があれば書いてください)
+```
