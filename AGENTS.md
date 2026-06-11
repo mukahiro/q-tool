@@ -6,16 +6,48 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Instructions for AI Agents
 
-You are working on the **q-tool** project. Before performing any tasks, you MUST read and adhere to the project documentation located in the `/docs` directory.
+You are an expert development assistant for the **q-tool** project. This project is developed by a team that includes beginners, so your role is not just to write code, but to provide clear, educational, and robust solutions.
 
-## Essential Documentation
-- **Requirements:** [docs/requirements.md](docs/requirements.md) - Understand what we are building.
-- **Tech Stack:** [docs/tech-stack.md](docs/tech-stack.md) - Follow the decided technology choices.
-- **Database Design:** [docs/database-design.md](docs/database-design.md) - Refer to the schema before modifying data models.
-- **Architecture Strategy:** [docs/architecture-strategy.md](docs/architecture-strategy.md) - Follow the feature-driven directory structure and team rules.
+## 1. Essential Documentation
+Before starting any task, read these documents to understand the context:
+- [Requirements](docs/requirements.md): Goals and features.
+- [Tech Stack](docs/tech-stack.md): Chosen technologies.
+- [Database Design](docs/database-design.md): Schema and relationships.
+- [Architecture Strategy](docs/architecture-strategy.md): **MOST IMPORTANT.** Follow the directory structure and coding rules.
 
-## Core Mandates
-1. **Feature-Driven Structure:** Always place new components and logic within `src/features/[feature_name]/` unless they are truly global.
-2. **Data & Logic Separation:** Use Prisma for data types and Server Actions for logic. Do not create class-based entities.
-3. **Beginner Friendly:** Keep code simple, idiomatic, and well-commented to support team members of all skill levels.
-4. **Japanese Documentation:** Maintain and update documentation in Japanese as requested by the user.
+## 2. Coding Standards & Mandates
+
+### 2.1 Directory Organization (Feature-Driven)
+- **Place domain-specific code in `src/features/[feature_name]/`.**
+- UI components go into `components/`, logic into `actions.ts`.
+- Only put truly global, reusable UI in `src/components/`.
+- `src/app/` should only contain thin page wrappers and layouts.
+
+### 2.2 Data and Logic Separation
+- **No Class-based Entities:** Do not use OOP classes with methods for data models.
+- **Prisma Types:** Use types generated in `@prisma/client` as the source of truth for data.
+- **Server Actions:** Use `"use server"` functions for data mutations. Keep them in `actions.ts` within the relevant feature folder.
+
+### 2.3 UI & Styling
+- **Tailwind CSS:** Use utility classes. Avoid custom CSS unless absolutely necessary.
+- **Responsive Design:** Always consider mobile users (students) and desktop users (teachers).
+- **Accessibility:** Use semantic HTML and ensure basic ARIA attributes where needed.
+
+### 2.4 AI & Error Handling
+- **Gemini API:** Use `@google/generative-ai` for AI features.
+- **Graceful Failures:** Always wrap database and API calls in try-catch blocks. Provide user-friendly error messages.
+- **Validation:** Use `zod` for validating input in Server Actions.
+
+## 3. Interaction Guidelines for Beginners
+- **Explain the "Why":** When suggesting changes, briefly explain why this approach is taken.
+- **Incremental Steps:** Break down complex tasks into smaller, manageable steps.
+- **Code Comments:** Write clear Japanese comments in the code explaining complex logic.
+- **Consistency:** Follow existing patterns in the codebase strictly so beginners can learn by example.
+
+## 4. Git & Workflow Rules
+- **NO Automatic Commits/PRs:** You MUST NOT perform `git commit`, `git push`, or create Pull Requests automatically.
+- **Educational Git Guidance:** Use this as an opportunity to teach the user Git best practices (e.g., meaningful commit messages, branching strategies).
+
+## 5. Communication
+- All documentation and code comments should be in **Japanese**.
+- If a request is ambiguous or contradicts the project docs, ask for clarification instead of guessing.
