@@ -42,6 +42,8 @@ Next.js, Supabase, Prisma, Gemini API を活用した、授業中の質問収集
 
 ## 開発の始め方
 
+### 環境設定
+
 自分のPCにクローンします。
 
 ```bash
@@ -62,8 +64,33 @@ npm run dev
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開き、結果を確認してください。
 
+### 作業の流れ
+
+初めに、リモートリポジトリが更新されている可能性があるのでpullする。
+
+```bash
+git switch main
+git pull
+```
+
+新しい作業ブランチを作成して、そこで作業する。  
+ブランチ名は`feature/ブランチ名`とし、英字とハイフンで書く。
+
+```bash
+git switch -c feature/branch-name
+```
+
+作業の一区切りごとにコミットする。
+
+```bash
+git commit
+```
+
+全ての作業が完了したら、GitHubに移動して、そのブランチのプルリクエスト(feature/branch-name -> main)を作成する。
+
 ## プルリクエストのテンプレート
 
+mainブランチへの直接プッシュは許可されていないので、必ずプルリクエストを作成してください。  
 プルリクエストを作成する際は、以下のテンプレートをコピーして概要欄に貼り付けてください。
 
 ```markdown
