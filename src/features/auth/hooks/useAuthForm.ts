@@ -35,18 +35,30 @@ export function useAuthForm() {
     try {
       const firebaseAuth = getFirebaseAuth();
 
-      unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+      unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
         setCurrentUser(user);
 
-        if (user) {
-          const token = await user.getIdToken();
-          await saveAuthToken(token);
-        } else {
-          await clearAuthToken();
-        }
+        void (async () => {
+          try {
+            const result = user
+              ? await saveAuthToken(await user.getIdToken())
+              : await clearAuthToken();
 
-        setIsLoading(false);
-        router.refresh();
+            if (!result.ok) {
+              setMessage(
+                result.message ?? "ログイン状態の同期に失敗しました。",
+              );
+            }
+          } catch (error) {
+            console.error("Firebase auth state sync failed:", error);
+            setMessage(
+              "ログイン状態の同期に失敗しました。時間をおいて再読み込みしてください。",
+            );
+          } finally {
+            setIsLoading(false);
+            router.refresh();
+          }
+        })();
       });
     } catch (error) {
       console.error("Firebase initialize failed:", error);
@@ -97,7 +109,13 @@ export function useAuthForm() {
     try {
       const firebaseAuth = getFirebaseAuth();
       await signOut(firebaseAuth);
-      await clearAuthToken();
+      const result = await clearAuthToken();
+
+      if (!result.ok) {
+        setMessage(result.message ?? "ログアウト処理に失敗しました。");
+        return;
+      }
+
       router.refresh();
     } catch (error) {
       console.error("Firebase sign out failed:", error);
