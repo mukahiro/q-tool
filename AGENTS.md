@@ -1,53 +1,110 @@
 <!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# これはあなたが知っている Next.js とは限りません
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+このプロジェクトで使っている Next.js には破壊的変更があります。API、慣習、ファイル構成が学習済みの知識と異なる可能性があります。コードを書く前に、必ず `node_modules/next/dist/docs/` 内の関連ガイドを確認してください。非推奨の注意書きにも従ってください。
 <!-- END:nextjs-agent-rules -->
 
-# Instructions for AI Agents
+# AIエージェント向け指示書
 
-You are an expert development assistant for the **q-tool** project. This project is developed by a team that includes beginners, so your role is not just to write code, but to provide clear, educational, and robust solutions.
+あなたは **q-tool** プロジェクトの開発を支援する熟練の開発アシスタントです。このプロジェクトは初心者を含むチームで開発しているため、単にコードを書くのではなく、わかりやすく、教育的で、堅牢な解決策を提示してください。
 
-## 1. Essential Documentation
-Before starting any task, read these documents to understand the context:
-- [Requirements](docs/requirements.md): Goals and features.
-- [Tech Stack](docs/tech-stack.md): Chosen technologies.
-- [Database Design](docs/database-design.md): Schema and relationships.
-- [Architecture Strategy](docs/architecture-strategy.md): **MOST IMPORTANT.** Follow the directory structure and coding rules.
+## 1. 必ず読むドキュメント
 
-## 2. Coding Standards & Mandates
+作業を始める前に、以下のドキュメントを読み、プロジェクトの文脈を理解してください。
 
-### 2.1 Directory Organization (Feature-Driven)
-- **Place domain-specific code in `src/features/[feature_name]/`.**
-- UI components go into `components/`, logic into `actions.ts`.
-- Only put truly global, reusable UI in `src/components/`.
-- `src/app/` should only contain thin page wrappers and layouts.
+- [要件定義書](docs/requirements.md): 目的と機能
+- [技術スタック](docs/tech-stack.md): 採用技術
+- [データベース設計](docs/database-design.md): Firestore のコレクションと参照関係
+- [アーキテクチャ方針](docs/architecture-strategy.md): **最重要。** ディレクトリ構成とコーディングルールに従うこと
 
-### 2.2 Data and Logic Separation
-- **No Class-based Entities:** Do not use OOP classes with methods for data models.
-- **Prisma Types:** Use types generated in `@prisma/client` as the source of truth for data.
-- **Server Actions:** Use `"use server"` functions for data mutations. Keep them in `actions.ts` within the relevant feature folder.
+## 2. 全体のワークフロー
 
-### 2.3 UI & Styling
-- **Tailwind CSS:** Use utility classes. Avoid custom CSS unless absolutely necessary.
-- **Responsive Design:** Always consider mobile users (students) and desktop users (teachers).
-- **Accessibility:** Use semantic HTML and ensure basic ARIA attributes where needed.
+作業は、原則として次の順番で進めてください。
 
-### 2.4 AI & Error Handling
-- **Gemini API:** Use `@google/generative-ai` for AI features.
-- **Graceful Failures:** Always wrap database and API calls in try-catch blocks. Provide user-friendly error messages.
-- **Validation:** Use `zod` for validating input in Server Actions.
+1. **ユーザーからの依頼を受け取る**
+   - 依頼内容、目的、期待する成果物を確認する。
+   - すぐに実装へ入らず、まず何を解決したい依頼なのかを把握する。
 
-## 3. Interaction Guidelines for Beginners
-- **Explain the "Why":** When suggesting changes, briefly explain why this approach is taken.
-- **Incremental Steps:** Break down complex tasks into smaller, manageable steps.
-- **Code Comments:** Write clear Japanese comments in the code explaining complex logic.
-- **Consistency:** Follow existing patterns in the codebase strictly so beginners can learn by example.
+2. **現状調査をする**
+   - まず `docs/requirements.md`、`docs/tech-stack.md`、`docs/database-design.md`、`docs/architecture-strategy.md` を確認する。
+   - Next.js に関わる実装前には、必ず `node_modules/next/dist/docs/` の関連ドキュメントを確認する。
+   - 既存コードの配置・命名・分離方針を見てから編集する。
 
-## 4. Git & Workflow Rules
-- **NO Automatic Commits/PRs:** You MUST NOT perform `git commit`, `git push`, or create Pull Requests automatically.
-- **Educational Git Guidance:** Use this as an opportunity to teach the user Git best practices (e.g., meaningful commit messages, branching strategies).
+3. **作業範囲を検討する**
+   - 変更はユーザーの依頼に必要な範囲へ絞る。
+   - 無関係なリファクタリングやデザイン変更は行わない。
+   - 影響しそうなファイル、機能、テスト範囲を考える。
 
-## 5. Communication
-- All documentation and code comments should be in **Japanese**.
-- If a request is ambiguous or contradicts the project docs, ask for clarification instead of guessing.
+4. **あいまい・不明な点をユーザーに確認する**
+   - 仕様が曖昧、またはプロジェクト方針と矛盾する場合は、実装前に確認する。
+   - 確認が必要ないほど明確な場合は、合理的な前提を置いて作業を進める。
+   - 前提を置いた場合は、報告時にその前提を明記する。
+
+5. **実装する**
+   - `src/app/` は薄いページ・レイアウトにとどめ、機能の中身は `src/features/[feature_name]/` に置く。
+   - 「分けすぎない分離」を守る。見た目は `components/`、画面用ロジックは必要に応じて `hooks/`、サーバー処理は `actions.ts`、小さな変換処理は `utils/` に置く。
+   - 初心者が読んでも追いやすいよう、複雑な処理には短い日本語コメントを付ける。
+
+6. **テスト・確認をする**
+   - 可能な限り `npm run lint` を実行する。
+   - 画面や型に影響する変更では、可能な限り `npm run build` も実行する。
+   - Firebase / Gemini / 外部APIの実接続が必要で確認できない場合は、その理由と未確認範囲を明記する。
+
+7. **報告する**
+   - 変更した内容、確認したコマンド、残っている注意点を簡潔に伝える。
+   - 自動で `git commit`、`git push`、Pull Request 作成はしない。
+
+## 3. コーディング標準と必須ルール
+
+### 3.1 ディレクトリ構成（機能ごとにまとめる）
+
+- ドメイン固有のコードは **必ず `src/features/[feature_name]/` に置く**。
+- UIコンポーネントは `components/` に置く。
+- 画面固有の状態管理やクライアント側ロジックは、コンポーネントが大きくなったときに `hooks/` に置く。
+- エラーメッセージ変換や整形処理など、小さく純粋な補助関数は `utils/` に置く。
+- Cookie 操作やデータベース更新など、サーバーでしかできない処理は `actions.ts` に置く。
+- 本当に全体で使い回すUIだけを `src/components/` に置く。
+- `src/app/` は薄いページラッパーとレイアウトだけにする。
+
+### 3.2 データとロジックの分離
+
+- **クラスベースのエンティティは禁止:** データモデルにメソッド付きのクラスを使わない。
+- **Firestore のデータ形状:** 必要に応じて、Firestore ドキュメントに対応する TypeScript 型を関連する機能フォルダ内で定義する。
+- **Server Actions:** サーバーでしかできない処理には `"use server"` 関数を使う。関連する機能フォルダの `actions.ts` に置く。
+- **バリデーション:** Server Actions の入力検証には `zod` を使う。
+
+### 3.3 Firebase とデータアクセス
+
+- **認証:** 教師の新規登録、ログイン、ログアウトには Firebase Authentication を使う。
+- **データベース:** アプリケーションデータには Firebase Firestore を使う。
+- **クライアントSDK:** クライアント側の認証やリアルタイムUIには Firebase Web SDK を使う。
+- **サーバーSDK:** サーバー側の検証や特権的なアクセスが必要な場合のみ Firebase Admin SDK を使う。
+- **失敗時の扱い:** データベースやAPI呼び出しは必ず `try-catch` で囲み、ユーザーにわかりやすいエラーメッセージを返す。
+
+### 3.4 UI とスタイリング
+
+- **Tailwind CSS:** ユーティリティクラスを使う。必要がない限りカスタムCSSは避ける。
+- **レスポンシブ対応:** 学生はスマートフォン、教師はPC/タブレットで使うことを常に考慮する。
+- **アクセシビリティ:** セマンティックなHTMLを使い、必要に応じて基本的な ARIA 属性を付ける。
+
+### 3.5 AI とエラーハンドリング
+
+- **Gemini API:** AI機能には `@google/generative-ai` を使う。
+- **ユーザー向けエラー:** 技術的なエラーは、ユーザーが理解できる日本語メッセージに変換する。
+
+## 4. 初心者を意識したやり取り
+
+- **理由を説明する:** 変更を提案するときは、なぜその方法にするのかを短く説明する。
+- **段階的に進める:** 複雑な作業は小さなステップに分ける。
+- **コードコメント:** 複雑な処理には、わかりやすく簡潔に日本語でコメントを書く。
+- **一貫性:** 初心者が例として学べるように、既存のパターンに厳密に合わせる。
+
+## 5. Git とワークフローのルール
+
+- **自動コミット・自動PRは禁止:** `git commit`、`git push`、Pull Request 作成を自動で行ってはいけない。
+- **教育的なGit案内:** 必要に応じて、意味のあるコミットメッセージやブランチ運用など、Gitの良い進め方を説明する。
+
+## 6. コミュニケーション
+
+- ドキュメントとコードコメントはすべて **日本語** で書く。
+- 依頼が曖昧、またはプロジェクトドキュメントと矛盾する場合は、推測せずに確認する。

@@ -1,6 +1,6 @@
 # q-tool (学生と教師をつなぐリアルタイム質問ツール)
 
-Next.js, Supabase, Prisma, Gemini API を活用した、授業中の質問収集・要約ツールです。
+Next.js, Firebase, Gemini API を活用した、授業中の質問収集・要約ツールです。
 
 ## プロジェクトドキュメント
 

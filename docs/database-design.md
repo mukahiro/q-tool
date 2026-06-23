@@ -1,8 +1,24 @@
-# データベース設計書 (仮)
+# Firestore データベース設計書 (仮)
 
-本プロジェクトで使用するデータベース（PostgreSQL / Prisma）のテーブル構造とリレーションを定義します。
+本プロジェクトで使用する Firebase Firestore のコレクション構造と、ドキュメント同士の参照関係を定義します。
 
-## 1. エンティティ図（論理構造）
+Firestore はリレーショナルデータベースではないため、外部キー制約はありません。関連するドキュメントIDをフィールドとして保存し、アプリケーション側の処理と Firestore Security Rules で権限・整合性を守ります。
+
+本プロジェクトでは、講義の単位である `rooms/{roomId}` を中心に、セクション・質問・要約をサブコレクションとしてまとめます。これにより「このルームに関係するデータ」が直感的に追いやすくなります。
+
+## 1. 全体構造
+
+```text
+rooms/{roomId}
+rooms/{roomId}/sections/{sectionId}
+rooms/{roomId}/questions/{questionId}
+rooms/{roomId}/questions/{questionId}/reactions/{studentSessionId}
+rooms/{roomId}/summaries/{summaryId}
+
+inviteCodes/{inviteCode}
+```
+
+## 2. エンティティ（論理構造）
 
 - **Teacher (User)**: ルームを作成・管理する教師。
 - **Room**: 講義ごとに作成される部屋。
@@ -10,89 +26,126 @@
 - **Question**: 学生から投稿される質問。
 - **Reaction (Like)**: 質問に対する「いいね」。
 - **Summary**: AIによって生成されたセクションごとの要約。
+- **InviteCode**: 入室コードからルームを探すための対応表。
 
-## 2. テーブル定義
+## 3. コレクション定義
 
-### 2.1 profiles (教師プロフィール)
-Supabase Authの `users` テーブルと紐づく、教師の基本情報。
+### 3.1 rooms/{roomId} (ルーム)
 
-| カラム名 | 型 | 説明 |
+教師が作成する講義の単位です。
+
+| フィールド名 | 型 | 説明 |
 | :--- | :--- | :--- |
-| id | uuid (PK) | Supabase Authのuser id |
-| email | string | メールアドレス |
-| name | string | 表示名 |
-| created_at | timestamp | 作成日時 |
-
-### 2.2 rooms (ルーム)
-教師が作成する講義の単位。
-
-| カラム名 | 型 | 説明 |
-| :--- | :--- | :--- |
-| id | uuid (PK) | ルームID |
-| teacher_id | uuid (FK) | profiles.idへの参照 |
+| id | string | ドキュメントID |
+| teacher_id | string | Firebase Authentication の教師 user uid |
 | name | string | ルーム名（講義名） |
-| invite_code | string (Unique) | 入室用の招待コード（QRコード用） |
+| invite_code | string | 入室用の招待コード（QRコード用） |
+| active_section_id | string / null | 現在受付中のセクションID |
 | is_active | boolean | 現在開講中かどうか |
+| question_count | number | ルーム全体の質問数。教師画面で件数表示に使う |
+| created_at | timestamp | 作成日時 |
+| updated_at | timestamp | 更新日時 |
+| closed_at | timestamp / null | 終了日時 |
+
+### 3.2 inviteCodes/{inviteCode} (招待コード)
+
+学生がQRコードやURLから入室するときに、招待コードからルームを探すための対応表です。
+
+`inviteCode` をドキュメントIDにすることで、同じ招待コードの重複を防ぎやすくします。
+
+| フィールド名 | 型 | 説明 |
+| :--- | :--- | :--- |
+| invite_code | string | ドキュメントIDと同じ招待コード |
+| room_id | string | `rooms/{roomId}` への参照ID |
 | created_at | timestamp | 作成日時 |
 
-### 2.3 sections (セクション)
-一つのルーム内での区切り。
+### 3.3 rooms/{roomId}/sections/{sectionId} (セクション)
 
-| カラム名 | 型 | 説明 |
+一つのルーム内での区切りです。
+
+| フィールド名 | 型 | 説明 |
 | :--- | :--- | :--- |
-| id | uuid (PK) | セクションID |
-| room_id | uuid (FK) | rooms.idへの参照 |
+| id | string | ドキュメントID |
+| room_id | string | 親ルームのID |
 | name | string | セクション名（例：第1章） |
-| order | integer | 表示順序 |
+| order | number | 表示順序 |
 | is_completed | boolean | 終了済みかどうか（AI要約済みか） |
+| question_count | number | このセクション内の質問数 |
+| reaction_count | number | このセクション内のリアクション数 |
+| summary_id | string / null | 対応する要約ドキュメントID |
 | created_at | timestamp | 作成日時 |
+| completed_at | timestamp / null | セクション終了日時 |
 
-### 2.4 questions (質問)
-学生から投稿されるデータ。
+### 3.4 rooms/{roomId}/questions/{questionId} (質問)
 
-| カラム名 | 型 | 説明 |
+学生から投稿される質問です。
+
+| フィールド名 | 型 | 説明 |
 | :--- | :--- | :--- |
-| id | uuid (PK) | 質問ID |
-| section_id | uuid (FK) | sections.idへの参照 |
-| content | text | 質問内容 |
+| id | string | ドキュメントID |
+| room_id | string | 親ルームのID |
+| section_id | string | `rooms/{roomId}/sections/{sectionId}` への参照ID |
+| content | string | 質問内容 |
 | student_session_id | string | 学生を識別するためのセッションID（匿名用） |
+| reaction_count | number | この質問へのリアクション数 |
 | created_at | timestamp | 投稿日時 |
 
-### 2.5 reactions (リアクション)
-質問に対する「いいね」。
+### 3.5 rooms/{roomId}/questions/{questionId}/reactions/{studentSessionId} (リアクション)
 
-| カラム名 | 型 | 説明 |
+質問に対する「いいね」です。
+
+`studentSessionId` をドキュメントIDにすることで、同じ学生が同じ質問に複数回リアクションしにくくします。
+
+| フィールド名 | 型 | 説明 |
 | :--- | :--- | :--- |
-| id | uuid (PK) | リアクションID |
-| question_id | uuid (FK) | questions.idへの参照 |
-| student_session_id | string | 重複投票防止用のセッションID |
+| student_session_id | string | ドキュメントIDと同じ学生セッションID |
+| created_at | timestamp | リアクション日時 |
 
-### 2.6 summaries (AI要約結果)
-セクション終了時に生成される要約データ。
+### 3.6 rooms/{roomId}/summaries/{summaryId} (AI要約結果)
 
-| カラム名 | 型 | 説明 |
+セクション終了時に生成される要約データです。
+
+| フィールド名 | 型 | 説明 |
 | :--- | :--- | :--- |
-| id | uuid (PK) | 要約ID |
-| section_id | uuid (FK, Unique) | sections.idへの参照 |
-| content | text | 要約テキスト |
-| categories | jsonb | カテゴリ分けされた結果など |
+| id | string | ドキュメントID |
+| room_id | string | 親ルームのID |
+| section_id | string | `rooms/{roomId}/sections/{sectionId}` への参照ID |
+| content | string | 要約テキスト |
+| categories | array / map | カテゴリ分けされた結果など |
 | created_at | timestamp | 生成日時 |
 
-## 3. リレーションシップ
+## 4. 参照関係
 
 - `Teacher` は複数の `Room` を持つ (1:N)
 - `Room` は複数の `Section` を持つ (1:N)
-- `Section` は複数の `Question` を持つ (1:N)
-- `Section` は1つの `Summary` を持つ (1:1)
+- `Room` は複数の `Question` を持つ (1:N)
 - `Question` は複数の `Reaction` を持つ (1:N)
+- `Room` は複数の `Summary` を持つ (1:N)
+- `Section` は `summary_id` によって1つの `Summary` と紐づく (1:1)
+- `InviteCode` は1つの `Room` と紐づく (1:1)
 
-## 4. セキュリティ方針 (RLS)
+## 5. 集計フィールドの方針
 
-- **profiles**: 本人のみが閲覧・編集可能。
-- **rooms**: 作成した教師のみが管理（編集・削除）可能。学生は招待コードで閲覧のみ可能。
-- **sections**: ルームの教師が管理。学生は閲覧のみ。
-- **questions**: 学生は誰でも投稿可能。閲覧は同じルーム内のユーザーのみ。
-- **summaries**: 全ユーザーが閲覧可能（セクション終了後）。
+Firestore では、毎回すべての質問やリアクションを読み込んで件数を数えると、読み取り回数が増えます。そのため、よく使う件数はドキュメント内に保存します。
 
-## 5. 補足
-学生はログイン不要なので、ブラウザごとのセッションID（LocalStorage等で保持）を記録することで、同一人物による連投制限や「いいね」の重複防止を可能にする。
+- `rooms/{roomId}.question_count`: ルーム全体の質問数
+- `rooms/{roomId}/sections/{sectionId}.question_count`: セクションごとの質問数
+- `rooms/{roomId}/sections/{sectionId}.reaction_count`: セクションごとのリアクション数
+- `rooms/{roomId}/questions/{questionId}.reaction_count`: 質問ごとのリアクション数
+
+これらの値は、質問投稿やリアクション追加のタイミングで、Firestore のトランザクションや `increment` を使って更新します。
+
+## 6. セキュリティ方針 (Firestore Security Rules)
+
+- **rooms**: 作成した教師のみが管理（編集・削除）可能。学生は招待コード経由で参加に必要な情報のみ閲覧可能。
+- **inviteCodes**: 学生が入室時に読み取れる。作成・更新・削除は教師またはサーバー側処理のみ。
+- **sections**: ルームの教師が管理。学生は入室済みルームのセクション情報を閲覧可能。
+- **questions**: 学生は入室済みルームに投稿可能。教師に個別質問を見せるかどうかは、セクション状態と画面仕様に合わせて制御する。
+- **reactions**: 学生は自分の `student_session_id` に対応するリアクションのみ作成可能。重複投票はドキュメントIDでも防止する。
+- **summaries**: セクション終了後に閲覧可能。作成は教師操作を起点にしたサーバー側処理で行う。
+
+## 7. 補足
+
+学生はログイン不要なので、ブラウザごとのセッションID（LocalStorage等で保持）を記録することで、同一人物による連投制限や「いいね」の重複防止を可能にします。
+
+「セクション終了まで教師画面に個別質問を表示しない」という要件は重要です。まずはUIで個別質問を表示しない設計にし、より厳密に守る必要が出た場合は Firestore Security Rules とサーバー側要約処理を組み合わせて、未完了セクションの質問本文を教師クライアントから直接読めない構成を検討します。
