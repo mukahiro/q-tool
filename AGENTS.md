@@ -16,6 +16,7 @@
 - [技術スタック](docs/tech-stack.md): 採用技術
 - [データベース設計](docs/database-design.md): Firestore のコレクションと参照関係
 - [ルーティング設計](docs/routing.md): URL設計と `src/app/` の役割
+- [テストデータ設計](docs/test-data.md): 開発中に使うサンプルデータ
 - [アーキテクチャ方針](docs/architecture-strategy.md): **最重要。** ディレクトリ構成とコーディングルールに従うこと
 
 ## 2. 全体のワークフロー
@@ -27,7 +28,7 @@
    - すぐに実装へ入らず、まず何を解決したい依頼なのかを把握する。
 
 2. **現状調査をする**
-   - まず `docs/requirements.md`、`docs/tech-stack.md`、`docs/database-design.md`、`docs/routing.md`、`docs/architecture-strategy.md` を確認する。
+   - まず `docs/requirements.md`、`docs/tech-stack.md`、`docs/database-design.md`、`docs/routing.md`、`docs/test-data.md`、`docs/architecture-strategy.md` を確認する。
    - Next.js に関わる実装前には、必ず `node_modules/next/dist/docs/` の関連ドキュメントを確認する。
    - 既存コードの配置・命名・分離方針を見てから編集する。
 
