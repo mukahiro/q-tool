@@ -10,6 +10,7 @@ src/
 ├── app/               # 画面のURLを決めるだけの薄い層
 │   ├── rooms/[roomId]/page.tsx
 │   ├── join/[inviteCode]/page.tsx
+│   ├── rooms/[roomId]/chat/page.tsx
 │   └── globals.css
 ├── features/          # アプリの「機能」ごとにまとめる（ここがメインの開発場所）
 │   ├── room/          # ルーム機能（入室、QRコードなど）
