@@ -8,7 +8,8 @@
 ```text
 src/
 ├── app/               # 画面のURLを決めるだけの薄い層
-│   ├── room/[id]/page.tsx
+│   ├── rooms/[roomId]/page.tsx
+│   ├── join/[inviteCode]/page.tsx
 │   └── globals.css
 ├── features/          # アプリの「機能」ごとにまとめる（ここがメインの開発場所）
 │   ├── room/          # ルーム機能（入室、QRコードなど）
@@ -37,7 +38,7 @@ src/
 
 ### A. `src/app` に書くこと（画面の枠組み）
 URL（ページ）ごとの全体のレイアウトや、どの機能をどこに置くかを決めます。
-- 例：`/room/[id]/page.tsx`
+- 例：`/rooms/[roomId]/page.tsx`
 - ここでは具体的なボタンやリストの見た目は作らず、`features` から部品を呼び出して配置するだけにします（薄いページ）。
 
 ### B. `src/features/.../components` に書くこと（具体的な部品）
