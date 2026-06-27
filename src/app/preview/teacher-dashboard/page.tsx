@@ -1,8 +1,38 @@
-import { getTeacherRooms } from "@/features/room/actions";
+import type { TeacherRoomSummary } from "@/features/room/actions";
 import { TeacherRoomList } from "@/features/room/components/TeacherRoomList";
+import { notFound } from "next/navigation";
 
-export default async function Home() {
-  const result = await getTeacherRooms();
+const previewRooms: TeacherRoomSummary[] = [
+  {
+    id: "preview-room-programming-basics",
+    name: "プログラミング基礎 第3回",
+    inviteCode: "QTOOL-314",
+    isActive: true,
+    createdAt: "2026-06-27T09:00:00.000Z",
+    questionCount: 18,
+  },
+  {
+    id: "preview-room-web-intro",
+    name: "Webアプリ入門",
+    inviteCode: "WEB-506",
+    isActive: true,
+    createdAt: "2026-06-26T05:15:00.000Z",
+    questionCount: 7,
+  },
+  {
+    id: "preview-room-data-literacy",
+    name: "データリテラシー演習",
+    inviteCode: "DATA-827",
+    isActive: false,
+    createdAt: "2026-06-20T04:30:00.000Z",
+    questionCount: 42,
+  },
+];
+
+export default function TeacherDashboardPreviewPage() {
+  if (process.env.NODE_ENV === "production") {
+    notFound();
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
@@ -15,7 +45,7 @@ export default async function Home() {
                 授業の質問ルーム管理
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                学生が参加するルームの状態と招待コードを一覧で確認できます。
+                教師としてログインした後のルーム一覧を確認できます。
               </p>
             </div>
             <button
@@ -27,18 +57,7 @@ export default async function Home() {
           </div>
         </header>
 
-        {result.status !== "success" ? (
-          <p
-            role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-          >
-            {result.message}
-          </p>
-        ) : null}
-
-        {result.status === "success" ? (
-          <TeacherRoomList rooms={result.rooms} />
-        ) : null}
+        <TeacherRoomList rooms={previewRooms} />
       </div>
     </main>
   );
