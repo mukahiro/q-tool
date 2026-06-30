@@ -1,4 +1,5 @@
-import { getFirestore, doc, getDoc, Timestamp } from "firebase/firestore";
+import { getFirebaseFirestore } from "@/lib/firebase/firestore";
+import { doc, getDoc, Timestamp } from "firebase/firestore";
 import type { Room } from "../types";
 
 /**
@@ -10,8 +11,8 @@ export async function fetchRoom(
   roomId: string
 ): Promise<{ data: Room | null; error: string | null }> {
   try {
-    // Firebase の初期化（クライアント側）
-    const firestore = getFirestore();
+    // Firebase App を初期化済みにしてから Firestore を取得する
+    const firestore = getFirebaseFirestore();
 
     // ルームドキュメントを取得
     const roomRef = doc(firestore, "rooms", roomId);
