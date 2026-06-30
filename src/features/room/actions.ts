@@ -1,24 +1,136 @@
 "use server";
 
+import { z } from "zod";
 import { getAuthToken } from "@/features/auth/actions";
-import { fetchRoom, timestampToDate } from "./utils/firebase";
+import { getVerifiedTeacherFromAuthCookie } from "@/features/auth/utils/server";
+import type { CreateRoomState } from "./state";
+import type { InviteCodeDocument, RoomDisplay, RoomDocument } from "./types";
+import {
+  createRoomDocuments,
+  type CreateRoomDocumentsResult,
+} from "./utils/firestoreRest";
 import { ROOM_ERROR_MESSAGES } from "./utils/errors";
-import type { RoomDisplay } from "./types";
+import { fetchRoom, timestampToDate } from "./utils/firebase";
+import { generateInviteCode } from "./utils/inviteCode";
+
+const createRoomSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "ルーム名を入力してください。")
+    .max(80, "ルーム名は80文字以内で入力してください。"),
+});
+
+export async function createRoom(
+  _previousState: CreateRoomState,
+  formData: FormData,
+): Promise<CreateRoomState> {
+  const teacher = await getVerifiedTeacherFromAuthCookie();
+
+  if (!teacher) {
+    return {
+      ok: false,
+      message: "ログイン状態を確認できません。再度ログインしてください。",
+    };
+  }
+
+  const nameValue = formData.get("name");
+  const parsedFields = createRoomSchema.safeParse({
+    name: typeof nameValue === "string" ? nameValue : "",
+  });
+
+  if (!parsedFields.success) {
+    return {
+      ok: false,
+      message:
+        parsedFields.error.issues[0]?.message ??
+        "入力内容を確認してください。",
+    };
+  }
+
+  try {
+    return await createRoomWithUniqueInviteCode({
+      idToken: teacher.idToken,
+      teacherId: teacher.uid,
+      roomName: parsedFields.data.name,
+    });
+  } catch (error) {
+    console.error("Room creation failed:", error);
+
+    return {
+      ok: false,
+      message:
+        "ルームの作成に失敗しました。時間をおいてもう一度お試しください。",
+    };
+  }
+}
+
+async function createRoomWithUniqueInviteCode({
+  idToken,
+  teacherId,
+  roomName,
+}: {
+  idToken: string;
+  teacherId: string;
+  roomName: string;
+}): Promise<CreateRoomState> {
+  const maxAttempts = 8;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const roomId = crypto.randomUUID();
+    const inviteCode = generateInviteCode();
+    const now = new Date();
+    const room: RoomDocument = {
+      id: roomId,
+      teacher_id: teacherId,
+      name: roomName,
+      invite_code: inviteCode,
+      active_section_id: null,
+      is_active: true,
+      question_count: 0,
+      created_at: now,
+      updated_at: now,
+      closed_at: null,
+    };
+    const inviteCodeDocument: InviteCodeDocument = {
+      invite_code: inviteCode,
+      room_id: roomId,
+      created_at: now,
+    };
+
+    const result: CreateRoomDocumentsResult = await createRoomDocuments({
+      idToken,
+      room,
+      inviteCode: inviteCodeDocument,
+    });
+
+    if (result === "created") {
+      return {
+        ok: true,
+        message: "ルームを作成しました。",
+        roomId,
+        inviteCode,
+      };
+    }
+  }
+
+  return {
+    ok: false,
+    message:
+      "招待コードの発行に失敗しました。時間をおいてもう一度お試しください。",
+  };
+}
 
 /**
  * ルーム詳細情報を取得するサーバーアクション
  * - 認証チェック
  * - ルーム取得
- * - 権限確認
  * - クライアント用に加工
- * @param roomId - ルームID
- * @returns { data: RoomDisplay | null, error: string | null }
  */
 export async function getRoomDetail(
-  roomId: string
+  roomId: string,
 ): Promise<{ data: RoomDisplay | null; error: string | null }> {
   try {
-    // 1. 認証トークンの確認（クライアントから送付されたCookieで確認）
     const authToken = await getAuthToken();
     if (!authToken) {
       return {
@@ -27,10 +139,6 @@ export async function getRoomDetail(
       };
     }
 
-    // 2. ルーム情報を取得（Server Actions 内で Firebase SDK を使用）
-    // 注: Server Actions ではクライアント Firebase SDK を使う
-    // そのため getCurrentUserUid() では auth.currentUser が undefined になる可能性
-    // 実際の運用では Admin SDK または Custom Claims の検証が必要
     const { data: room, error: roomFetchError } = await fetchRoom(roomId);
 
     if (roomFetchError || !room) {
@@ -40,13 +148,6 @@ export async function getRoomDetail(
       };
     }
 
-    // 3. 権限確認（ここは制限的になる）
-    // Server Actions 内で currentUser が利用できないため、
-    // 本来ならば idToken をデコードして uid を取得する必要がある
-    // 簡暫く、クライアント側で権限チェックを補う設計とする
-    // または Firestore Security Rules で権限制御する
-
-    // 4. クライアント用に加工
     const roomDisplay: RoomDisplay = {
       id: room.id,
       name: room.name,

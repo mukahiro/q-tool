@@ -36,8 +36,14 @@ export default async function Home() {
                 ルーム管理を開始できます
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                次のステップで、教師ごとのルーム作成や管理画面をこのダッシュボードに接続します。
+                新しいルームを作成し、学生が参加するための招待コードを発行できます。
               </p>
+              <Link
+                href="/rooms/new"
+                className="mt-6 inline-flex items-center justify-center rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                ルームを作成
+              </Link>
             </>
           ) : (
             <>
