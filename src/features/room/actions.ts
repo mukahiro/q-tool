@@ -1,13 +1,16 @@
 "use server";
 
 import { z } from "zod";
+import { getAuthToken } from "@/features/auth/actions";
 import { getVerifiedTeacherFromAuthCookie } from "@/features/auth/utils/server";
 import type { CreateRoomState } from "./state";
-import type { InviteCodeDocument, RoomDocument } from "./types";
+import type { InviteCodeDocument, RoomDisplay, RoomDocument } from "./types";
 import {
   createRoomDocuments,
   type CreateRoomDocumentsResult,
 } from "./utils/firestoreRest";
+import { ROOM_ERROR_MESSAGES } from "./utils/errors";
+import { fetchRoom, timestampToDate } from "./utils/firebase";
 import { generateInviteCode } from "./utils/inviteCode";
 
 const createRoomSchema = z.object({
@@ -116,4 +119,52 @@ async function createRoomWithUniqueInviteCode({
     message:
       "招待コードの発行に失敗しました。時間をおいてもう一度お試しください。",
   };
+}
+
+/**
+ * ルーム詳細情報を取得するサーバーアクション
+ * - 認証チェック
+ * - ルーム取得
+ * - クライアント用に加工
+ */
+export async function getRoomDetail(
+  roomId: string,
+): Promise<{ data: RoomDisplay | null; error: string | null }> {
+  try {
+    const authToken = await getAuthToken();
+    if (!authToken) {
+      return {
+        data: null,
+        error: ROOM_ERROR_MESSAGES.NOT_LOGGED_IN,
+      };
+    }
+
+    const { data: room, error: roomFetchError } = await fetchRoom(roomId);
+
+    if (roomFetchError || !room) {
+      return {
+        data: null,
+        error: roomFetchError || ROOM_ERROR_MESSAGES.FETCH_FAILED,
+      };
+    }
+
+    const roomDisplay: RoomDisplay = {
+      id: room.id,
+      name: room.name,
+      invite_code: room.invite_code,
+      is_active: room.is_active,
+      question_count: room.question_count,
+      active_section_id: room.active_section_id,
+      created_at: timestampToDate(room.created_at) || new Date(),
+      updated_at: timestampToDate(room.updated_at) || new Date(),
+    };
+
+    return { data: roomDisplay, error: null };
+  } catch (error) {
+    console.error("getRoomDetail error:", error);
+    return {
+      data: null,
+      error: ROOM_ERROR_MESSAGES.FETCH_FAILED,
+    };
+  }
 }
