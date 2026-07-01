@@ -4,7 +4,6 @@ import { getAuthToken } from "@/features/auth/actions";
 import { getFirebaseAdminAuth, getFirebaseAdminDb } from "@/lib/firebase/admin";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import type { DocumentData } from "firebase-admin/firestore";
-import type { NextRequest } from "next/server";
 
 export type TeacherRoomSummary = {
   id: string;
@@ -28,14 +27,6 @@ export type GetTeacherRoomsResult =
 
 export async function getTeacherRooms(): Promise<GetTeacherRoomsResult> {
   const idToken = await getAuthToken();
-
-  return getTeacherRoomsByIdToken(idToken);
-}
-
-export async function getTeacherRoomsForRequest(
-  request: NextRequest,
-): Promise<GetTeacherRoomsResult> {
-  const idToken = getIdTokenFromRequest(request);
 
   return getTeacherRoomsByIdToken(idToken);
 }
@@ -88,17 +79,6 @@ async function getTeacherRoomsByIdToken(
       rooms: [],
     };
   }
-}
-
-function getIdTokenFromRequest(request: NextRequest) {
-  const authorization = request.headers.get("authorization");
-  const bearerPrefix = "Bearer ";
-
-  if (authorization?.startsWith(bearerPrefix)) {
-    return authorization.slice(bearerPrefix.length);
-  }
-
-  return request.cookies.get("q_tool_firebase_id_token")?.value ?? null;
 }
 
 function toTeacherRoomSummary(
