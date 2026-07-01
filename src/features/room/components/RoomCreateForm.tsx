@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { createRoom } from "@/features/room/actions";
 import { initialCreateRoomState } from "@/features/room/state";
@@ -40,18 +41,27 @@ export function RoomCreateForm() {
       ) : null}
 
       {state.ok && state.roomId && state.inviteCode ? (
-        <dl className="grid gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 sm:grid-cols-2">
-          <div>
-            <dt className="font-medium">ルームID</dt>
-            <dd className="mt-1 break-all font-mono">{state.roomId}</dd>
-          </div>
-          <div>
-            <dt className="font-medium">招待コード</dt>
-            <dd className="mt-1 font-mono text-lg font-semibold">
-              {state.inviteCode}
-            </dd>
-          </div>
-        </dl>
+        <div className="space-y-3">
+          <dl className="grid gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 sm:grid-cols-2">
+            <div>
+              <dt className="font-medium">ルームID</dt>
+              <dd className="mt-1 break-all font-mono">{state.roomId}</dd>
+            </div>
+            <div>
+              <dt className="font-medium">招待コード</dt>
+              <dd className="mt-1 font-mono text-lg font-semibold">
+                {state.inviteCode}
+              </dd>
+            </div>
+          </dl>
+
+          <Link
+            href={`/rooms/${state.roomId}/invite`}
+            className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            学生入室用QR・PINを表示
+          </Link>
+        </div>
       ) : null}
 
       <button
