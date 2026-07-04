@@ -5,6 +5,11 @@ export type CreateRoomState = {
   inviteCode?: string;
 };
 
+export type EndRoomState = {
+  ok: boolean;
+  message: string | null;
+};
+
 export const initialCreateRoomState: CreateRoomState = {
   ok: false,
   message: null,

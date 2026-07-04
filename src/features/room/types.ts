@@ -53,4 +53,5 @@ export type RoomDisplay = {
   active_section_id: string | null;
   created_at: Date;
   updated_at: Date;
+  closed_at: Date | null;
 };
