@@ -1,8 +1,22 @@
 "use client";
 
-import { ChevronDown, Heart, MessageSquare, X } from "lucide-react";
+import {
+  ArrowDown,
+  Bell,
+  ChevronDown,
+  Heart,
+  MessageSquare,
+  X,
+} from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useState, useTransition } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import {
   postQuestion,
   toggleQuestionReaction,
@@ -15,6 +29,12 @@ import type {
 } from "../types";
 
 type QuestionTargetScope = "active_section" | "whole_class";
+type NewQuestionNotice = {
+  questionId: string;
+  sectionId: string;
+  count: number;
+  isOwnQuestion: boolean;
+} | null;
 
 export function QuestionChatPage({
   initialRoom,
@@ -31,14 +51,16 @@ export function QuestionChatPage({
     setErrorMessage,
   } = useQuestionChat(initialRoom);
   const [content, setContent] = useState("");
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedPastSectionIds, setExpandedPastSectionIds] = useState<
     Set<string>
   >(() => new Set());
   const [targetScope, setTargetScope] =
     useState<QuestionTargetScope>("active_section");
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
+  const [newQuestionNotice, setNewQuestionNotice] =
+    useState<NewQuestionNotice>(null);
   const [isPending, startTransition] = useTransition();
+  const notifiedQuestionIdsRef = useRef<Set<string>>(new Set());
 
   const effectiveTargetScope =
     targetScope === "active_section" && !room.activeSectionId
@@ -55,6 +77,41 @@ export function QuestionChatPage({
     effectiveTargetScope === "active_section"
       ? (activeSectionName ?? "現在のセクション")
       : "授業全体";
+  const recentlyAddedQuestions = useMemo(
+    () =>
+      questionGroups.flatMap((group) =>
+        group.questions
+          .filter((question) => question.isRecentlyAdded)
+          .map((question) => ({
+            id: question.id,
+            sectionId: group.sectionId,
+            isOwnQuestion: question.isOwnQuestion,
+          })),
+      ),
+    [questionGroups],
+  );
+
+  useEffect(() => {
+    const unnotifiedQuestions = recentlyAddedQuestions.filter(
+      (question) => !notifiedQuestionIdsRef.current.has(question.id),
+    );
+
+    if (unnotifiedQuestions.length === 0) {
+      return;
+    }
+
+    unnotifiedQuestions.forEach((question) => {
+      notifiedQuestionIdsRef.current.add(question.id);
+    });
+
+    const latestQuestion = unnotifiedQuestions[0];
+    setNewQuestionNotice({
+      questionId: latestQuestion.id,
+      sectionId: latestQuestion.sectionId,
+      count: unnotifiedQuestions.length,
+      isOwnQuestion: latestQuestion.isOwnQuestion,
+    });
+  }, [recentlyAddedQuestions]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,7 +124,6 @@ export function QuestionChatPage({
     }
 
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     startTransition(async () => {
       const result = await postQuestion({
@@ -83,7 +139,6 @@ export function QuestionChatPage({
       }
 
       setContent("");
-      setSuccessMessage(result.message);
       setIsComposerExpanded(false);
     });
   }
@@ -97,7 +152,6 @@ export function QuestionChatPage({
     }
 
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     startTransition(async () => {
       const result = await toggleQuestionReaction({
@@ -126,12 +180,82 @@ export function QuestionChatPage({
     });
   }
 
+  function handleNewQuestionNoticeClick() {
+    if (!newQuestionNotice) {
+      return;
+    }
+
+    const noticeSection = questionGroups.find(
+      (group) => group.sectionId === newQuestionNotice.sectionId,
+    );
+
+    if (noticeSection?.isPastSection) {
+      setExpandedPastSectionIds((current) => {
+        if (current.has(newQuestionNotice.sectionId)) {
+          return current;
+        }
+
+        const next = new Set(current);
+        next.add(newQuestionNotice.sectionId);
+        return next;
+      });
+    }
+
+    setNewQuestionNotice(null);
+
+    window.setTimeout(() => {
+      const questionElement = document.getElementById(
+        `question-${newQuestionNotice.questionId}`,
+      );
+      questionElement?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 50);
+  }
+
+  function getNewQuestionNoticeText() {
+    if (!newQuestionNotice) {
+      return "";
+    }
+
+    if (newQuestionNotice.isOwnQuestion) {
+      return "質問を投稿しました";
+    }
+
+    return newQuestionNotice.count > 1
+      ? `${newQuestionNotice.count}件の新しい投稿があります`
+      : "新しい投稿があります";
+  }
+
   return (
     <div
       className={
         isComposerExpanded ? "space-y-5 pb-96" : "space-y-5 pb-28"
       }
     >
+      {newQuestionNotice && (
+        <div className="fixed inset-x-0 top-3 z-30 px-4">
+          <button
+            type="button"
+            onClick={handleNewQuestionNoticeClick}
+            className="mx-auto flex min-h-12 w-full max-w-sm cursor-pointer items-center gap-3 rounded-md border border-emerald-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-950 shadow-lg shadow-slate-950/10 transition hover:border-emerald-300 hover:bg-emerald-50"
+          >
+            <Bell
+              aria-hidden="true"
+              className="size-5 shrink-0 text-emerald-700"
+            />
+            <span className="min-w-0 flex-1">
+              {getNewQuestionNoticeText()}
+            </span>
+            <ArrowDown
+              aria-hidden="true"
+              className="size-4 shrink-0 text-emerald-700"
+            />
+          </button>
+        </div>
+      )}
+
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3">
           <div>
@@ -162,12 +286,6 @@ export function QuestionChatPage({
       {errorMessage && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
           {errorMessage}
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
-          {successMessage}
         </div>
       )}
 
@@ -433,6 +551,7 @@ function QuestionItem({
 }) {
   return (
     <article
+      id={`question-${question.id}`}
       className={
         question.isRecentlyAdded
           ? "origin-top rounded-lg border border-emerald-300 bg-emerald-50 p-4 ring-2 ring-emerald-100 transition-all duration-700 motion-safe:animate-[question-card-enter_700ms_ease-out]"
