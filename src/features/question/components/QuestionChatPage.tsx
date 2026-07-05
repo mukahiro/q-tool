@@ -432,7 +432,13 @@ function QuestionItem({
   onReaction: (questionId: string) => void;
 }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+    <article
+      className={
+        question.isRecentlyAdded
+          ? "origin-top rounded-lg border border-emerald-300 bg-emerald-50 p-4 ring-2 ring-emerald-100 transition-all duration-700 motion-safe:animate-[question-card-enter_700ms_ease-out]"
+          : "origin-top rounded-lg border border-slate-200 bg-slate-50 p-4 transition-all duration-700"
+      }
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

@@ -35,6 +35,7 @@ export type QuestionListItem = {
   createdAtText: string;
   isOwnQuestion: boolean;
   hasReacted: boolean;
+  isRecentlyAdded: boolean;
 };
 
 export type QuestionSectionGroup = {

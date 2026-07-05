@@ -8,7 +8,7 @@ import {
   query,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getFirebaseFirestore } from "@/lib/firebase/firestore";
 import type {
   QuestionDocument,
@@ -29,11 +29,19 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
   const [studentSessionId, setStudentSessionId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<QuestionDocument[]>([]);
   const [sections, setSections] = useState<SectionDocument[]>([]);
+  const [recentlyAddedQuestionIds, setRecentlyAddedQuestionIds] = useState<
+    Set<string>
+  >(() => new Set());
   const [reactedQuestionIds, setReactedQuestionIds] = useState<Set<string>>(
     () => new Set(),
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+  const knownQuestionIdsRef = useRef<Set<string>>(new Set());
+  const hasReceivedQuestionSnapshotRef = useRef(false);
+  const highlightTimersRef = useRef<
+    Map<string, ReturnType<typeof setTimeout>>
+  >(new Map());
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -109,7 +117,47 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
     return onSnapshot(
       questionsQuery,
       (snapshot) => {
-        setQuestions(snapshot.docs.map(toQuestionDocument));
+        const nextQuestions = snapshot.docs.map(toQuestionDocument);
+        const previousQuestionIds = knownQuestionIdsRef.current;
+
+        if (hasReceivedQuestionSnapshotRef.current) {
+          const newQuestionIds = nextQuestions
+            .filter((question) => !previousQuestionIds.has(question.id))
+            .map((question) => question.id);
+
+          if (newQuestionIds.length > 0) {
+            setRecentlyAddedQuestionIds((current) => {
+              const next = new Set(current);
+              newQuestionIds.forEach((questionId) => next.add(questionId));
+              return next;
+            });
+
+            newQuestionIds.forEach((questionId) => {
+              const currentTimer = highlightTimersRef.current.get(questionId);
+
+              if (currentTimer) {
+                clearTimeout(currentTimer);
+              }
+
+              const timer = setTimeout(() => {
+                setRecentlyAddedQuestionIds((current) => {
+                  const next = new Set(current);
+                  next.delete(questionId);
+                  return next;
+                });
+                highlightTimersRef.current.delete(questionId);
+              }, 1800);
+
+              highlightTimersRef.current.set(questionId, timer);
+            });
+          }
+        }
+
+        knownQuestionIdsRef.current = new Set(
+          nextQuestions.map((question) => question.id),
+        );
+        hasReceivedQuestionSnapshotRef.current = true;
+        setQuestions(nextQuestions);
         setIsLoadingQuestions(false);
       },
       (error) => {
@@ -119,6 +167,15 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
       },
     );
   }, [initialRoom.id]);
+
+  useEffect(() => {
+    const highlightTimers = highlightTimersRef.current;
+
+    return () => {
+      highlightTimers.forEach((timer) => clearTimeout(timer));
+      highlightTimers.clear();
+    };
+  }, []);
 
   useEffect(() => {
     if (!studentSessionId || questions.length === 0) {
@@ -189,6 +246,7 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
         createdAtText: formatQuestionCreatedAt(question.created_at),
         isOwnQuestion: question.student_session_id === studentSessionId,
         hasReacted: reactedQuestionIds.has(question.id),
+        isRecentlyAdded: recentlyAddedQuestionIds.has(question.id),
       };
 
       groupsBySectionId.set(groupId, [
@@ -229,6 +287,7 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
   }, [
     questions,
     reactedQuestionIds,
+    recentlyAddedQuestionIds,
     room.activeSectionId,
     sections,
     studentSessionId,
