@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Heart } from "lucide-react";
+import { ChevronDown, Heart, MessageSquare, X } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState, useTransition } from "react";
 import {
@@ -37,6 +37,7 @@ export function QuestionChatPage({
   >(() => new Set());
   const [targetScope, setTargetScope] =
     useState<QuestionTargetScope>("active_section");
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const effectiveTargetScope =
@@ -50,6 +51,10 @@ export function QuestionChatPage({
     (total, group) => total + group.questions.length,
     0,
   );
+  const targetScopeLabel =
+    effectiveTargetScope === "active_section"
+      ? (activeSectionName ?? "現在のセクション")
+      : "授業全体";
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,6 +84,7 @@ export function QuestionChatPage({
 
       setContent("");
       setSuccessMessage(result.message);
+      setIsComposerExpanded(false);
     });
   }
 
@@ -121,7 +127,11 @@ export function QuestionChatPage({
   }
 
   return (
-    <div className="space-y-5">
+    <div
+      className={
+        isComposerExpanded ? "space-y-5 pb-96" : "space-y-5 pb-28"
+      }
+    >
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3">
           <div>
@@ -167,73 +177,6 @@ export function QuestionChatPage({
         </div>
       )}
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-950">質問を投稿</h2>
-        <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-semibold text-slate-700">
-              質問先
-            </legend>
-            <div className="grid grid-cols-2 gap-2 rounded-md bg-slate-100 p-1">
-              <button
-                type="button"
-                disabled={!room.activeSectionId || !room.isActive || isPending}
-                onClick={() => setTargetScope("active_section")}
-                aria-pressed={effectiveTargetScope === "active_section"}
-                className={
-                  effectiveTargetScope === "active_section"
-                    ? "min-h-10 cursor-pointer rounded-sm bg-white px-3 py-2 text-sm font-bold text-emerald-700 shadow-sm disabled:cursor-not-allowed disabled:text-slate-400"
-                    : "min-h-10 cursor-pointer rounded-sm px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white/70 disabled:cursor-not-allowed disabled:text-slate-400"
-                }
-              >
-                現在のセクション
-              </button>
-              <button
-                type="button"
-                disabled={!room.isActive || isPending}
-                onClick={() => setTargetScope("whole_class")}
-                aria-pressed={effectiveTargetScope === "whole_class"}
-                className={
-                  effectiveTargetScope === "whole_class"
-                    ? "min-h-10 cursor-pointer rounded-sm bg-white px-3 py-2 text-sm font-bold text-emerald-700 shadow-sm disabled:cursor-not-allowed disabled:text-slate-400"
-                    : "min-h-10 cursor-pointer rounded-sm px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white/70 disabled:cursor-not-allowed disabled:text-slate-400"
-                }
-              >
-                授業全体
-              </button>
-            </div>
-          </fieldset>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">
-              質問内容
-            </span>
-            <textarea
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              disabled={!canPost || isPending}
-              rows={4}
-              maxLength={500}
-              placeholder={
-                canPost
-                  ? "わからないことを入力してください"
-                  : "現在は質問を投稿できません"
-              }
-              className="mt-2 w-full resize-none rounded-md border border-slate-300 px-3 py-3 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100 disabled:text-slate-500"
-            />
-          </label>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-slate-500">{content.length}/500</p>
-            <button
-              type="submit"
-              disabled={!canPost || isPending || content.trim().length === 0}
-              className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md bg-emerald-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {isPending ? "送信中..." : "投稿する"}
-            </button>
-          </div>
-        </form>
-      </section>
-
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-slate-950">投稿済み質問</h2>
@@ -275,6 +218,122 @@ export function QuestionChatPage({
         >
           別のルームに入室する
         </Link>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur">
+        <div className="mx-auto w-full max-w-3xl">
+          {!isComposerExpanded && (
+            <button
+              type="button"
+              disabled={!room.isActive}
+              onClick={() => setIsComposerExpanded(true)}
+              className="flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-md border border-slate-300 bg-white px-4 py-3 text-left transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+            >
+              <MessageSquare
+                aria-hidden="true"
+                className="size-5 shrink-0 text-emerald-700"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-slate-950">
+                  質問を書く
+                </span>
+                <span className="block truncate text-xs font-semibold text-slate-500">
+                  質問先: {targetScopeLabel}
+                </span>
+              </span>
+            </button>
+          )}
+
+          {isComposerExpanded && (
+            <form
+              className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+              onSubmit={handleSubmit}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-bold text-slate-950">
+                  質問を投稿
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsComposerExpanded(false)}
+                  aria-label="投稿フォームを閉じる"
+                  className="inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-slate-600 transition hover:bg-slate-100"
+                >
+                  <X aria-hidden="true" className="size-5" />
+                </button>
+              </div>
+
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-semibold text-slate-700">
+                  質問先
+                </legend>
+                <div className="grid grid-cols-2 gap-2 rounded-md bg-slate-100 p-1">
+                  <button
+                    type="button"
+                    disabled={
+                      !room.activeSectionId || !room.isActive || isPending
+                    }
+                    onClick={() => setTargetScope("active_section")}
+                    aria-pressed={effectiveTargetScope === "active_section"}
+                    className={
+                      effectiveTargetScope === "active_section"
+                        ? "min-h-10 cursor-pointer rounded-sm bg-white px-3 py-2 text-sm font-bold text-emerald-700 shadow-sm disabled:cursor-not-allowed disabled:text-slate-400"
+                        : "min-h-10 cursor-pointer rounded-sm px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white/70 disabled:cursor-not-allowed disabled:text-slate-400"
+                    }
+                  >
+                    現在のセクション
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!room.isActive || isPending}
+                    onClick={() => setTargetScope("whole_class")}
+                    aria-pressed={effectiveTargetScope === "whole_class"}
+                    className={
+                      effectiveTargetScope === "whole_class"
+                        ? "min-h-10 cursor-pointer rounded-sm bg-white px-3 py-2 text-sm font-bold text-emerald-700 shadow-sm disabled:cursor-not-allowed disabled:text-slate-400"
+                        : "min-h-10 cursor-pointer rounded-sm px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white/70 disabled:cursor-not-allowed disabled:text-slate-400"
+                    }
+                  >
+                    授業全体
+                  </button>
+                </div>
+              </fieldset>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">
+                  質問内容
+                </span>
+                <textarea
+                  value={content}
+                  onChange={(event) => setContent(event.target.value)}
+                  disabled={!canPost || isPending}
+                  autoFocus
+                  rows={4}
+                  maxLength={500}
+                  placeholder={
+                    canPost
+                      ? "わからないことを入力してください"
+                      : "現在は質問を投稿できません"
+                  }
+                  className="mt-2 w-full resize-none rounded-md border border-slate-300 px-3 py-3 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100 disabled:text-slate-500"
+                />
+              </label>
+
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-slate-500">{content.length}/500</p>
+                <button
+                  type="submit"
+                  disabled={
+                    !canPost || isPending || content.trim().length === 0
+                  }
+                  className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md bg-emerald-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {isPending ? "送信中..." : "投稿する"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
