@@ -40,12 +40,20 @@ export default async function Home() {
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                 作成済みルームの確認や招待コードの確認は、ルーム一覧ページで行います。
               </p>
-              <Link
-                href="/rooms"
-                className="mt-6 inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                ルーム一覧を開く
-              </Link>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/rooms"
+                  className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  ルーム一覧を開く
+                </Link>
+                <Link
+                  href="/rooms/new"
+                  className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  ルームを作成
+                </Link>
+              </div>
             </>
           ) : (
             <>
