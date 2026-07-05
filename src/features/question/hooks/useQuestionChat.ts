@@ -208,11 +208,29 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
 
         return secondOrder - firstOrder;
       });
-  }, [questions, reactedQuestionIds, room.activeSectionId, sections, studentSessionId]);
+  }, [
+    questions,
+    reactedQuestionIds,
+    room.activeSectionId,
+    sections,
+    studentSessionId,
+  ]);
+
+  const activeSectionName = useMemo(() => {
+    if (!room.activeSectionId) {
+      return null;
+    }
+
+    return (
+      sections.find((section) => section.id === room.activeSectionId)?.name ??
+      "セクション名を読み込み中"
+    );
+  }, [room.activeSectionId, sections]);
 
   return {
     room,
     studentSessionId,
+    activeSectionName,
     questionGroups,
     errorMessage,
     isLoadingQuestions,

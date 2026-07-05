@@ -22,6 +22,7 @@ export function QuestionChatPage({
   const {
     room,
     studentSessionId,
+    activeSectionName,
     questionGroups,
     errorMessage,
     isLoadingQuestions,
@@ -130,7 +131,7 @@ export function QuestionChatPage({
             </span>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
               {room.activeSectionId
-                ? `セクション: ${room.activeSectionId}`
+                ? `セクション: ${activeSectionName}`
                 : "受付中のセクションなし"}
             </span>
           </div>
