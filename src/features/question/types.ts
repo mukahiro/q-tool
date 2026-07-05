@@ -10,7 +10,7 @@ export type StudentChatRoom = {
 export type QuestionDocument = {
   id: string;
   room_id: string;
-  section_id: string;
+  section_id: string | null;
   content: string;
   student_session_id: string;
   reaction_count: number;
@@ -26,7 +26,7 @@ export type SectionDocument = {
 
 export type QuestionListItem = {
   id: string;
-  sectionId: string;
+  sectionId: string | null;
   sectionName: string;
   content: string;
   studentSessionId: string;

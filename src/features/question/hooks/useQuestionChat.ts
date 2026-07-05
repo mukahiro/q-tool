@@ -21,6 +21,9 @@ import { QUESTION_ERROR_MESSAGES } from "../utils/errors";
 import { formatQuestionCreatedAt } from "../utils/format";
 import { getOrCreateStudentSessionId } from "../utils/session";
 
+const WHOLE_CLASS_GROUP_ID = "whole_class";
+const WHOLE_CLASS_LABEL = "授業全体";
+
 export function useQuestionChat(initialRoom: StudentChatRoom) {
   const [room, setRoom] = useState(initialRoom);
   const [studentSessionId, setStudentSessionId] = useState<string | null>(null);
@@ -166,8 +169,13 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
     const groupsBySectionId = new Map<string, QuestionListItem[]>();
 
     for (const question of questions) {
-      const section = sectionById.get(question.section_id);
-      const sectionName = section?.name ?? `セクションID: ${question.section_id}`;
+      const groupId = question.section_id ?? WHOLE_CLASS_GROUP_ID;
+      const section = question.section_id
+        ? sectionById.get(question.section_id)
+        : null;
+      const sectionName = question.section_id
+        ? (section?.name ?? `セクションID: ${question.section_id}`)
+        : WHOLE_CLASS_LABEL;
       const questionItem: QuestionListItem = {
         id: question.id,
         sectionId: question.section_id,
@@ -180,28 +188,34 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
         hasReacted: reactedQuestionIds.has(question.id),
       };
 
-      groupsBySectionId.set(question.section_id, [
-        ...(groupsBySectionId.get(question.section_id) ?? []),
+      groupsBySectionId.set(groupId, [
+        ...(groupsBySectionId.get(groupId) ?? []),
         questionItem,
       ]);
     }
 
     return Array.from(groupsBySectionId.entries())
-      .map(([sectionId, sectionQuestions]) => {
-        const section = sectionById.get(sectionId);
+      .map(([groupId, sectionQuestions]) => {
+        const isWholeClassGroup = groupId === WHOLE_CLASS_GROUP_ID;
+        const section = isWholeClassGroup ? null : sectionById.get(groupId);
+        const sectionId = isWholeClassGroup ? null : groupId;
         const isActiveSection = room.activeSectionId === sectionId;
 
         return {
-          sectionId,
-          sectionName: section?.name ?? `セクションID: ${sectionId}`,
+          sectionId: groupId,
+          sectionName: isWholeClassGroup
+            ? WHOLE_CLASS_LABEL
+            : (section?.name ?? `セクションID: ${groupId}`),
           isActiveSection,
-          isPastSection: !isActiveSection,
+          isPastSection: !isActiveSection && !isWholeClassGroup,
           questions: sectionQuestions,
         };
       })
       .sort((firstGroup, secondGroup) => {
         if (firstGroup.isActiveSection) return -1;
         if (secondGroup.isActiveSection) return 1;
+        if (firstGroup.sectionId === WHOLE_CLASS_GROUP_ID) return -1;
+        if (secondGroup.sectionId === WHOLE_CLASS_GROUP_ID) return 1;
 
         const firstOrder = sectionById.get(firstGroup.sectionId)?.order ?? 0;
         const secondOrder = sectionById.get(secondGroup.sectionId)?.order ?? 0;
@@ -257,7 +271,7 @@ function toQuestionDocument(
   return {
     id: snapshot.id,
     room_id: readString(data.room_id, ""),
-    section_id: readString(data.section_id, ""),
+    section_id: readNullableString(data.section_id),
     content: readString(data.content, ""),
     student_session_id: readString(data.student_session_id, ""),
     reaction_count: readNumber(data.reaction_count),
@@ -267,6 +281,10 @@ function toQuestionDocument(
 
 function readString(value: unknown, fallback: string) {
   return typeof value === "string" ? value : fallback;
+}
+
+function readNullableString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
 function readNumber(value: unknown) {

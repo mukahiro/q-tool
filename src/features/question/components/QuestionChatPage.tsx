@@ -14,6 +14,8 @@ import type {
   StudentChatRoom,
 } from "../types";
 
+type QuestionTargetScope = "active_section" | "whole_class";
+
 export function QuestionChatPage({
   initialRoom,
 }: {
@@ -33,9 +35,17 @@ export function QuestionChatPage({
   const [expandedPastSectionIds, setExpandedPastSectionIds] = useState<
     Set<string>
   >(() => new Set());
+  const [targetScope, setTargetScope] =
+    useState<QuestionTargetScope>("active_section");
   const [isPending, startTransition] = useTransition();
 
-  const canPost = room.isActive && Boolean(room.activeSectionId);
+  const effectiveTargetScope =
+    targetScope === "active_section" && !room.activeSectionId
+      ? "whole_class"
+      : targetScope;
+  const canPost =
+    room.isActive &&
+    (effectiveTargetScope === "whole_class" || Boolean(room.activeSectionId));
   const questionCount = questionGroups.reduce(
     (total, group) => total + group.questions.length,
     0,
@@ -58,6 +68,7 @@ export function QuestionChatPage({
       const result = await postQuestion({
         roomId: room.id,
         studentSessionId,
+        targetScope: effectiveTargetScope,
         content,
       });
 
@@ -159,6 +170,39 @@ export function QuestionChatPage({
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-bold text-slate-950">質問を投稿</h2>
         <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-semibold text-slate-700">
+              質問先
+            </legend>
+            <div className="grid grid-cols-2 gap-2 rounded-md bg-slate-100 p-1">
+              <button
+                type="button"
+                disabled={!room.activeSectionId || !room.isActive || isPending}
+                onClick={() => setTargetScope("active_section")}
+                aria-pressed={effectiveTargetScope === "active_section"}
+                className={
+                  effectiveTargetScope === "active_section"
+                    ? "min-h-10 cursor-pointer rounded-sm bg-white px-3 py-2 text-sm font-bold text-emerald-700 shadow-sm disabled:cursor-not-allowed disabled:text-slate-400"
+                    : "min-h-10 cursor-pointer rounded-sm px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white/70 disabled:cursor-not-allowed disabled:text-slate-400"
+                }
+              >
+                現在のセクション
+              </button>
+              <button
+                type="button"
+                disabled={!room.isActive || isPending}
+                onClick={() => setTargetScope("whole_class")}
+                aria-pressed={effectiveTargetScope === "whole_class"}
+                className={
+                  effectiveTargetScope === "whole_class"
+                    ? "min-h-10 cursor-pointer rounded-sm bg-white px-3 py-2 text-sm font-bold text-emerald-700 shadow-sm disabled:cursor-not-allowed disabled:text-slate-400"
+                    : "min-h-10 cursor-pointer rounded-sm px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-white/70 disabled:cursor-not-allowed disabled:text-slate-400"
+                }
+              >
+                授業全体
+              </button>
+            </div>
+          </fieldset>
           <label className="block">
             <span className="text-sm font-semibold text-slate-700">
               質問内容

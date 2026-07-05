@@ -84,7 +84,8 @@ inviteCodes/{inviteCode}
 | :--- | :--- | :--- |
 | id | string | ドキュメントID |
 | room_id | string | 親ルームのID |
-| section_id | string | `rooms/{roomId}/sections/{sectionId}` への参照ID |
+| section_id | string / null | セクション向け質問の場合は `rooms/{roomId}/sections/{sectionId}` への参照ID。授業全体向け質問の場合は null |
+| target_scope | string | `active_section` または `whole_class`。質問が現在セクション向けか授業全体向けかを表す |
 | content | string | 質問内容 |
 | student_session_id | string | 学生を識別するためのセッションID（匿名用） |
 | reaction_count | number | この質問へのリアクション数 |

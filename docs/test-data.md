@@ -55,7 +55,7 @@ rooms/room_math_001
   "invite_code": "MATH7K",
   "active_section_id": "section_math_001_intro",
   "is_active": true,
-  "question_count": 3,
+  "question_count": 4,
   "created_at": "2026-06-23T09:00:00+09:00",
   "updated_at": "2026-06-23T09:20:00+09:00",
   "closed_at": null
@@ -268,7 +268,30 @@ rooms/room_math_001/questions/question_math_003
 }
 ```
 
-### 7.3 終了済みルームの質問
+### 7.3 授業全体向けの質問
+
+パス:
+
+```text
+rooms/room_math_001/questions/question_math_004
+```
+
+データ:
+
+```json
+{
+  "id": "question_math_004",
+  "room_id": "room_math_001",
+  "section_id": null,
+  "target_scope": "whole_class",
+  "content": "今日の内容全体で、テスト前に特に復習した方がよいところはどこですか？",
+  "student_session_id": "student_session_d",
+  "reaction_count": 0,
+  "created_at": "2026-06-23T09:38:00+09:00"
+}
+```
+
+### 7.4 終了済みルームの質問
 
 パス:
 

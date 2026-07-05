@@ -21,6 +21,7 @@ type StudentRoomResult =
 const postQuestionSchema = z.object({
   roomId: z.string().min(1),
   studentSessionId: z.string().min(1, QUESTION_ERROR_MESSAGES.SESSION_REQUIRED),
+  targetScope: z.enum(["active_section", "whole_class"]),
   content: z
     .string()
     .trim()
@@ -87,7 +88,7 @@ export async function postQuestion(
     };
   }
 
-  const { roomId, studentSessionId, content } = parsedInput.data;
+  const { roomId, studentSessionId, targetScope, content } = parsedInput.data;
   const db = getFirebaseAdminDb();
   const roomRef = db.collection("rooms").doc(roomId);
   const questionRef = roomRef.collection("questions").doc();
@@ -106,23 +107,34 @@ export async function postQuestion(
         throw new QuestionActionError(QUESTION_ERROR_MESSAGES.ROOM_CLOSED);
       }
 
-      const activeSectionId = readNullableString(roomData.active_section_id);
+      let sectionId: string | null = null;
+      let sectionRef: FirebaseFirestore.DocumentReference | null = null;
 
-      if (!activeSectionId) {
-        throw new QuestionActionError(QUESTION_ERROR_MESSAGES.SECTION_NOT_READY);
-      }
+      if (targetScope === "active_section") {
+        const activeSectionId = readNullableString(roomData.active_section_id);
 
-      const sectionRef = roomRef.collection("sections").doc(activeSectionId);
-      const sectionSnapshot = await transaction.get(sectionRef);
+        if (!activeSectionId) {
+          throw new QuestionActionError(
+            QUESTION_ERROR_MESSAGES.SECTION_NOT_READY,
+          );
+        }
 
-      if (!sectionSnapshot.exists || sectionSnapshot.data()?.is_completed) {
-        throw new QuestionActionError(QUESTION_ERROR_MESSAGES.SECTION_NOT_READY);
+        sectionId = activeSectionId;
+        sectionRef = roomRef.collection("sections").doc(activeSectionId);
+        const sectionSnapshot = await transaction.get(sectionRef);
+
+        if (!sectionSnapshot.exists || sectionSnapshot.data()?.is_completed) {
+          throw new QuestionActionError(
+            QUESTION_ERROR_MESSAGES.SECTION_NOT_READY,
+          );
+        }
       }
 
       transaction.set(questionRef, {
         id: questionRef.id,
         room_id: roomId,
-        section_id: activeSectionId,
+        section_id: sectionId,
+        target_scope: targetScope,
         content,
         student_session_id: studentSessionId,
         reaction_count: 0,
@@ -132,9 +144,12 @@ export async function postQuestion(
         question_count: FieldValue.increment(1),
         updated_at: FieldValue.serverTimestamp(),
       });
-      transaction.update(sectionRef, {
-        question_count: FieldValue.increment(1),
-      });
+
+      if (sectionRef) {
+        transaction.update(sectionRef, {
+          question_count: FieldValue.increment(1),
+        });
+      }
     });
 
     return {
@@ -209,23 +224,21 @@ export async function toggleQuestionReaction(
       }
 
       const sectionId = readNullableString(questionData?.section_id);
-
-      if (!sectionId) {
-        throw new QuestionActionError(
-          QUESTION_ERROR_MESSAGES.QUESTION_NOT_FOUND,
-        );
-      }
-
-      const sectionRef = roomRef.collection("sections").doc(sectionId);
+      const sectionRef = sectionId
+        ? roomRef.collection("sections").doc(sectionId)
+        : null;
 
       if (reactionSnapshot.exists) {
         transaction.delete(reactionRef);
         transaction.update(questionRef, {
           reaction_count: FieldValue.increment(-1),
         });
-        transaction.update(sectionRef, {
-          reaction_count: FieldValue.increment(-1),
-        });
+
+        if (sectionRef) {
+          transaction.update(sectionRef, {
+            reaction_count: FieldValue.increment(-1),
+          });
+        }
         return;
       }
 
@@ -236,9 +249,12 @@ export async function toggleQuestionReaction(
       transaction.update(questionRef, {
         reaction_count: FieldValue.increment(1),
       });
-      transaction.update(sectionRef, {
-        reaction_count: FieldValue.increment(1),
-      });
+
+      if (sectionRef) {
+        transaction.update(sectionRef, {
+          reaction_count: FieldValue.increment(1),
+        });
+      }
     });
 
     return {
