@@ -190,6 +190,54 @@ async function main() {
   setBatchData(
     batch,
     db,
+    "rooms/room_history_001/sections/section_history_001_intro",
+    {
+      id: "section_history_001_intro",
+      room_id: "room_history_001",
+      name: "導入: 鎌倉幕府の成立",
+      order: 1,
+      is_completed: true,
+      question_count: 2,
+      reaction_count: 1,
+      summary_id: null,
+      created_at: timestamp("2026-06-20T10:05:00+09:00"),
+      completed_at: timestamp("2026-06-20T10:45:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_history_001/questions/question_history_001",
+    {
+      id: "question_history_001",
+      room_id: "room_history_001",
+      section_id: "section_history_001_intro",
+      content: "御恩と奉公の関係が少し混乱しています。具体例はありますか？",
+      student_session_id: "student_session_d",
+      reaction_count: 1,
+      created_at: timestamp("2026-06-20T10:18:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_history_001/questions/question_history_002",
+    {
+      id: "question_history_002",
+      room_id: "room_history_001",
+      section_id: "section_history_001_intro",
+      content: "源頼朝が幕府を開いた年は1192年と1185年のどちらで覚えるべきですか？",
+      student_session_id: "student_session_e",
+      reaction_count: 0,
+      created_at: timestamp("2026-06-20T10:27:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
     "rooms/room_math_001/questions/question_math_001/reactions/student_session_b",
     {
       student_session_id: "student_session_b",
@@ -214,6 +262,26 @@ async function main() {
     {
       student_session_id: "student_session_a",
       created_at: timestamp("2026-06-23T09:18:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_math_001/questions/question_math_003/reactions/student_session_a",
+    {
+      student_session_id: "student_session_a",
+      created_at: timestamp("2026-06-23T09:36:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_history_001/questions/question_history_001/reactions/student_session_e",
+    {
+      student_session_id: "student_session_e",
+      created_at: timestamp("2026-06-20T10:30:00+09:00"),
     },
   );
 
