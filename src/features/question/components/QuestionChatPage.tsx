@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown, Heart } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState, useTransition } from "react";
 import {
@@ -180,7 +181,7 @@ export function QuestionChatPage({
             <button
               type="submit"
               disabled={!canPost || isPending || content.trim().length === 0}
-              className="inline-flex min-h-11 items-center justify-center rounded-md bg-emerald-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md bg-emerald-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               {isPending ? "送信中..." : "投稿する"}
             </button>
@@ -281,9 +282,10 @@ function QuestionSection({
             title={
               isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
             }
-            className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-50"
           >
-            <ChevronDownIcon
+            <ChevronDown
+              aria-hidden="true"
               className={
                 isExpanded
                   ? "size-5 rotate-180 transition-transform"
@@ -307,23 +309,6 @@ function QuestionSection({
         </div>
       )}
     </section>
-  );
-}
-
-function ChevronDownIcon({ className }: { className: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
   );
 }
 
@@ -372,10 +357,16 @@ function QuestionItem({
             aria-pressed={question.hasReacted}
             className={
               question.hasReacted
-                ? "inline-flex min-h-10 items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                : "inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                ? "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                : "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
             }
           >
+            <Heart
+              aria-hidden="true"
+              className={
+                question.hasReacted ? "mr-2 size-4 fill-current" : "mr-2 size-4"
+              }
+            />
             {question.hasReacted ? "取り消す" : "共感する"}
           </button>
         )}
