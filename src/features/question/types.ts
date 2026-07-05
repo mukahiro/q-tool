@@ -17,15 +17,31 @@ export type QuestionDocument = {
   created_at: Timestamp;
 };
 
+export type SectionDocument = {
+  id: string;
+  name: string;
+  order: number;
+  is_completed: boolean;
+};
+
 export type QuestionListItem = {
   id: string;
   sectionId: string;
+  sectionName: string;
   content: string;
   studentSessionId: string;
   reactionCount: number;
   createdAtText: string;
   isOwnQuestion: boolean;
   hasReacted: boolean;
+};
+
+export type QuestionSectionGroup = {
+  sectionId: string;
+  sectionName: string;
+  isActiveSection: boolean;
+  isPastSection: boolean;
+  questions: QuestionListItem[];
 };
 
 export type QuestionActionResult =

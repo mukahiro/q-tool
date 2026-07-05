@@ -13,6 +13,8 @@ import { getFirebaseFirestore } from "@/lib/firebase/firestore";
 import type {
   QuestionDocument,
   QuestionListItem,
+  QuestionSectionGroup,
+  SectionDocument,
   StudentChatRoom,
 } from "../types";
 import { QUESTION_ERROR_MESSAGES } from "../utils/errors";
@@ -23,6 +25,7 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
   const [room, setRoom] = useState(initialRoom);
   const [studentSessionId, setStudentSessionId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<QuestionDocument[]>([]);
+  const [sections, setSections] = useState<SectionDocument[]>([]);
   const [reactedQuestionIds, setReactedQuestionIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -73,6 +76,25 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
       },
     );
   }, [initialRoom]);
+
+  useEffect(() => {
+    const db = getFirebaseFirestore();
+    const sectionsQuery = query(
+      collection(db, "rooms", initialRoom.id, "sections"),
+      orderBy("order", "asc"),
+    );
+
+    return onSnapshot(
+      sectionsQuery,
+      (snapshot) => {
+        setSections(snapshot.docs.map(toSectionDocument));
+      },
+      (error) => {
+        console.error("セクション一覧のリアルタイム取得に失敗しました", error);
+        setErrorMessage(QUESTION_ERROR_MESSAGES.FETCH_FAILED);
+      },
+    );
+  }, [initialRoom.id]);
 
   useEffect(() => {
     const db = getFirebaseFirestore();
@@ -133,30 +155,79 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
     };
   }, [initialRoom.id, questions, studentSessionId]);
 
-  const questionItems: QuestionListItem[] = useMemo(() => {
+  const questionGroups: QuestionSectionGroup[] = useMemo(() => {
     if (!studentSessionId) {
       return [];
     }
 
-    return questions.map((question) => ({
-      id: question.id,
-      sectionId: question.section_id,
-      content: question.content,
-      studentSessionId: question.student_session_id,
-      reactionCount: question.reaction_count,
-      createdAtText: formatQuestionCreatedAt(question.created_at),
-      isOwnQuestion: question.student_session_id === studentSessionId,
-      hasReacted: reactedQuestionIds.has(question.id),
-    }));
-  }, [questions, reactedQuestionIds, studentSessionId]);
+    const sectionById = new Map(
+      sections.map((section) => [section.id, section]),
+    );
+    const groupsBySectionId = new Map<string, QuestionListItem[]>();
+
+    for (const question of questions) {
+      const section = sectionById.get(question.section_id);
+      const sectionName = section?.name ?? `セクションID: ${question.section_id}`;
+      const questionItem: QuestionListItem = {
+        id: question.id,
+        sectionId: question.section_id,
+        sectionName,
+        content: question.content,
+        studentSessionId: question.student_session_id,
+        reactionCount: question.reaction_count,
+        createdAtText: formatQuestionCreatedAt(question.created_at),
+        isOwnQuestion: question.student_session_id === studentSessionId,
+        hasReacted: reactedQuestionIds.has(question.id),
+      };
+
+      groupsBySectionId.set(question.section_id, [
+        ...(groupsBySectionId.get(question.section_id) ?? []),
+        questionItem,
+      ]);
+    }
+
+    return Array.from(groupsBySectionId.entries())
+      .map(([sectionId, sectionQuestions]) => {
+        const section = sectionById.get(sectionId);
+        const isActiveSection = room.activeSectionId === sectionId;
+
+        return {
+          sectionId,
+          sectionName: section?.name ?? `セクションID: ${sectionId}`,
+          isActiveSection,
+          isPastSection: !isActiveSection,
+          questions: sectionQuestions,
+        };
+      })
+      .sort((firstGroup, secondGroup) => {
+        if (firstGroup.isActiveSection) return -1;
+        if (secondGroup.isActiveSection) return 1;
+
+        const firstOrder = sectionById.get(firstGroup.sectionId)?.order ?? 0;
+        const secondOrder = sectionById.get(secondGroup.sectionId)?.order ?? 0;
+
+        return secondOrder - firstOrder;
+      });
+  }, [questions, reactedQuestionIds, room.activeSectionId, sections, studentSessionId]);
 
   return {
     room,
     studentSessionId,
-    questions: questionItems,
+    questionGroups,
     errorMessage,
     isLoadingQuestions,
     setErrorMessage,
+  };
+}
+
+function toSectionDocument(snapshot: QueryDocumentSnapshot): SectionDocument {
+  const data = snapshot.data();
+
+  return {
+    id: snapshot.id,
+    name: readString(data.name, `セクションID: ${snapshot.id}`),
+    order: readNumber(data.order),
+    is_completed: Boolean(data.is_completed),
   };
 }
 
