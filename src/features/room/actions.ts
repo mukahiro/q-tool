@@ -44,14 +44,19 @@ const createRoomSchema = z.object({
     .max(80, "ルーム名は80文字以内で入力してください。"),
 });
 
-export async function getTeacherRooms(): Promise<GetTeacherRoomsResult> {
+export async function getTeacherRooms(options?: {
+  limit?: number;
+}): Promise<GetTeacherRoomsResult> {
   const idToken = await getAuthToken();
 
-  return getTeacherRoomsByIdToken(idToken);
+  return getTeacherRoomsByIdToken(idToken, options);
 }
 
 async function getTeacherRoomsByIdToken(
   idToken: string | null,
+  options?: {
+    limit?: number;
+  },
 ): Promise<GetTeacherRoomsResult> {
   if (!idToken) {
     return {
@@ -76,11 +81,16 @@ async function getTeacherRoomsByIdToken(
   }
 
   try {
-    const roomsSnapshot = await getFirebaseAdminDb()
+    let roomsQuery = getFirebaseAdminDb()
       .collection("rooms")
       .where("teacher_id", "==", decodedToken.uid)
-      .orderBy("created_at", "desc")
-      .get();
+      .orderBy("created_at", "desc");
+
+    if (typeof options?.limit === "number" && options.limit > 0) {
+      roomsQuery = roomsQuery.limit(Math.floor(options.limit));
+    }
+
+    const roomsSnapshot = await roomsQuery.get();
 
     return {
       status: "success",
