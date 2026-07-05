@@ -344,17 +344,15 @@ function QuestionItem({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-        <p className="text-xs font-semibold text-slate-500">
-          共感 {question.reactionCount}件
-        </p>
-
+      <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
         {!question.isOwnQuestion && (
           <button
             type="button"
             disabled={isPending}
             onClick={() => onReaction(question.id)}
             aria-pressed={question.hasReacted}
+            aria-label={question.hasReacted ? "共感を取り消す" : "共感する"}
+            title={question.hasReacted ? "共感を取り消す" : "共感する"}
             className={
               question.hasReacted
                 ? "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
@@ -367,7 +365,7 @@ function QuestionItem({
                 question.hasReacted ? "mr-2 size-4 fill-current" : "mr-2 size-4"
               }
             />
-            {question.hasReacted ? "取り消す" : "共感する"}
+            {question.hasReacted ? "共感を取り消す" : "共感する"}
           </button>
         )}
       </div>
