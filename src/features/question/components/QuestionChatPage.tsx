@@ -303,12 +303,18 @@ function QuestionSection({
             </h3>
             <span
               className={
-                group.isActiveSection
+                group.isWholeClass
+                  ? "rounded-full bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-700"
+                  : group.isActiveSection
                   ? "rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
                   : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600"
               }
             >
-              {group.isActiveSection ? "現在のセクション" : "過去のセクション"}
+              {group.isWholeClass
+                ? "授業全体への質問"
+                : group.isActiveSection
+                  ? "現在のセクション"
+                  : "過去のセクション"}
             </span>
           </div>
           <p className="mt-1 text-xs font-semibold text-slate-500">
@@ -372,7 +378,7 @@ function QuestionItem({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-              対象セクション: {question.sectionName}
+              {question.targetLabel}
             </span>
             {question.isOwnQuestion && (
               <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">

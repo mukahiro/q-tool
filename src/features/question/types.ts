@@ -28,6 +28,7 @@ export type QuestionListItem = {
   id: string;
   sectionId: string | null;
   sectionName: string;
+  targetLabel: string;
   content: string;
   studentSessionId: string;
   reactionCount: number;
@@ -39,6 +40,7 @@ export type QuestionListItem = {
 export type QuestionSectionGroup = {
   sectionId: string;
   sectionName: string;
+  isWholeClass: boolean;
   isActiveSection: boolean;
   isPastSection: boolean;
   questions: QuestionListItem[];

@@ -180,6 +180,9 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
         id: question.id,
         sectionId: question.section_id,
         sectionName,
+        targetLabel: question.section_id
+          ? `対象セクション: ${sectionName}`
+          : `質問先: ${WHOLE_CLASS_LABEL}`,
         content: question.content,
         studentSessionId: question.student_session_id,
         reactionCount: question.reaction_count,
@@ -204,8 +207,9 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
         return {
           sectionId: groupId,
           sectionName: isWholeClassGroup
-            ? WHOLE_CLASS_LABEL
+            ? `${WHOLE_CLASS_LABEL}への質問`
             : (section?.name ?? `セクションID: ${groupId}`),
+          isWholeClass: isWholeClassGroup,
           isActiveSection,
           isPastSection: !isActiveSection && !isWholeClassGroup,
           questions: sectionQuestions,
