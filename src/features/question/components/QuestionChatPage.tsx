@@ -564,23 +564,23 @@ function QuestionItem({
             <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
               {question.targetLabel}
             </span>
-            {question.isOwnQuestion && (
-              <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
-                自分の質問
-              </span>
-            )}
             <span className="text-xs font-medium text-slate-500">
               {question.createdAtText}
             </span>
+            {question.isOwnQuestion && (
+              <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ml-auto">
+                自分の質問
+              </span>
+            )}
           </div>
-          <p className="mt-3 whitespace-pre-wrap break-words text-base leading-7 text-slate-950">
+          <p className="mt-3 whitespace-pre-wrap break-words text-base leading-7 text-slate-950 px-2">
             {question.content}
           </p>
         </div>
       </div>
 
-      <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
-        {!question.isOwnQuestion && (
+      {!question.isOwnQuestion && (
+        <div className="mt-3 flex justify-end">
           <button
             type="button"
             disabled={isPending}
@@ -602,8 +602,8 @@ function QuestionItem({
             />
             {question.hasReacted ? "共感を取り消す" : "共感する"}
           </button>
-        )}
-      </div>
+        </div>
+    )}
     </article>
   );
 }
