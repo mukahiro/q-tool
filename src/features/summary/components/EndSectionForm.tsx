@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useState } from "react";
 import { endActiveSection } from "@/features/summary/actions";
 import { SummaryResultContent } from "@/features/summary/components/SummaryResultContent";
 import { initialEndSectionState } from "@/features/summary/types";
@@ -22,7 +22,6 @@ export function EndSectionForm({
   const [dismissedSummaryId, setDismissedSummaryId] = useState<string | null>(
     null,
   );
-  const handledSummaryIdRef = useRef<string | null>(null);
   const [state, formAction, isPending] = useActionState(
     endActiveSection,
     initialEndSectionState,
@@ -32,19 +31,11 @@ export function EndSectionForm({
     Boolean(state.summaryContent) &&
     state.summaryId !== dismissedSummaryId;
 
-  useEffect(() => {
-    if (!state.ok || !state.summaryId) {
-      return;
-    }
-
-    if (handledSummaryIdRef.current === state.summaryId) {
-      return;
-    }
-
-    handledSummaryIdRef.current = state.summaryId;
+  const handleCloseSummaryModal = () => {
+    setDismissedSummaryId(state.summaryId ?? null);
     onEnded?.();
     router.refresh();
-  }, [onEnded, router, state.ok, state.summaryId]);
+  };
 
   return (
     <>
@@ -99,7 +90,7 @@ export function EndSectionForm({
               </div>
               <button
                 type="button"
-                onClick={() => setDismissedSummaryId(state.summaryId ?? null)}
+                onClick={handleCloseSummaryModal}
                 className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 閉じる
@@ -123,7 +114,7 @@ export function EndSectionForm({
               </Link>
               <button
                 type="button"
-                onClick={() => setDismissedSummaryId(state.summaryId ?? null)}
+                onClick={handleCloseSummaryModal}
                 className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 ルーム詳細に戻る
