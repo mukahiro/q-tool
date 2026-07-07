@@ -254,7 +254,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
             href="/dashboard"
             className={`inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold transition ${buttonBorder}`}
           >
-            ダッシュボードに戻る
+            ルーム一覧に戻る
           </Link>
         </div>
       </section>

@@ -11,9 +11,9 @@ export function RoomCreateView({
       <div className="mx-auto w-full max-w-3xl">
         <Link
           href="/dashboard"
-          className="text-sm font-medium text-slate-600 underline-offset-4 hover:underline"
+          className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-100"
         >
-          ダッシュボードへ戻る
+          ← ダッシュボードへ戻る
         </Link>
 
         <header className="mt-6 border-b border-slate-200 pb-6">
