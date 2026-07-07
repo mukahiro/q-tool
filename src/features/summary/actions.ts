@@ -28,6 +28,13 @@ type GeneratedSummary = {
   items: SummaryItem[];
 };
 
+type SummaryItemInput = {
+  title?: unknown;
+  text?: unknown;
+  source_question_ids?: unknown;
+  interest_degree?: unknown;
+};
+
 export type GetRoomSummariesResult =
   | {
       ok: true;
@@ -286,6 +293,7 @@ async function generateSectionSummary(
           text: "このセクションでは質問が投稿されませんでした。",
           title: "質問なし",
           source_question_ids: [],
+          interest_degree: 0,
         },
       ],
     };
@@ -325,12 +333,13 @@ empathy_count は学生からの共感数です。summary_weight は要約時の
 
 出力は必ず次の JSON だけにしてください。Markdown のコードブロックは使わないでください。
 {
-  "content": "教師向けの要約文。重要な疑問点、混乱が多い箇所、回答の優先度が伝わるように200〜400字で書く。",
+  "content": "教師向けの要約文。重要な疑問点、混乱が多い箇所、回答の優先度が伝わるように200字程度で書く。",
   "items": [
     {
       "title": "要約項目の短い見出し",
       "text": "要約の一項目。どの質問群から判断したか分かる粒度で書く。",
-      "source_question_ids": ["question_idをそのまま入れる"]
+      "source_question_ids": ["question_idをそのまま入れる"],
+      "interest_degree": 1
     }
   ]
 }
@@ -339,6 +348,8 @@ empathy_count は学生からの共感数です。summary_weight は要約時の
 - items は2〜5件にまとめる。
 - 各 item には title と text を必ず入れる。
 - source_question_ids には、質問一覧にある question_id だけを入れる。
+- interest_degree は 1〜5 の整数で入れる。5 が最も関心が高い項目を表す。
+- items は interest_degree の高い順に並べる。
 - summary_weight が高い質問は、content と items の優先順位・詳しさ・並び順に強く反映する。
 - 共感数が多い質問と似た質問が複数ある場合は、まとめて重要な論点として扱う。
 - 共感数が少ない質問でも、授業理解に重要なものは必要に応じて含める。
@@ -365,6 +376,13 @@ function parseGeminiSummary(
       ? parsed.items
           .map((item) => toSummaryItem(item, validQuestionIds))
           .filter((item): item is SummaryItem => item !== null)
+          .sort((firstItem, secondItem) => {
+            if (firstItem.interest_degree !== secondItem.interest_degree) {
+              return secondItem.interest_degree - firstItem.interest_degree;
+            }
+
+            return 0;
+          })
       : [];
 
     return {
@@ -398,7 +416,7 @@ function toSummaryItem(
     return null;
   }
 
-  const data = value as Record<string, unknown>;
+  const data = value as SummaryItemInput;
   const text = readString(data.text, "");
   const title = readString(data.title, "要約項目");
 
@@ -413,6 +431,7 @@ function toSummaryItem(
       data.source_question_ids,
       validQuestionIds,
     ),
+    interest_degree: readInterestDegree(data.interest_degree),
   };
 }
 
@@ -436,6 +455,13 @@ function toSummaryDisplay(
     ? data.items
         .map((item) => toSummaryItem(item, sourceQuestionIds))
         .filter((item): item is SummaryItem => item !== null)
+        .sort((firstItem, secondItem) => {
+          if (firstItem.interest_degree !== secondItem.interest_degree) {
+            return secondItem.interest_degree - firstItem.interest_degree;
+          }
+
+          return 0;
+        })
     : [];
   const sectionId = readString(data.section_id, "不明なセクション");
 
@@ -488,6 +514,7 @@ function toFallbackSummaryItems(content: string): SummaryItem[] {
       title: "全体要約",
       text: content,
       source_question_ids: [],
+      interest_degree: 0,
     },
   ];
 }
@@ -518,6 +545,16 @@ function readNullableString(value: unknown) {
 
 function readNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function readInterestDegree(value: unknown) {
+  const degree = readNumber(value);
+
+  if (degree <= 0) {
+    return 0;
+  }
+
+  return Math.min(5, Math.max(1, Math.round(degree)));
 }
 
 function toMillis(value: unknown) {

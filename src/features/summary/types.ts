@@ -4,6 +4,7 @@ export type SummaryItem = {
   title: string;
   text: string;
   source_question_ids: string[];
+  interest_degree: number;
 };
 
 export type SummarySourceQuestion = {
