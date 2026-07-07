@@ -538,14 +538,20 @@ function QuestionSection({
 
       {isExpanded && (
         <div className="space-y-3 border-t border-slate-100 p-4">
-          {group.questions.map((question) => (
-            <QuestionItem
-              key={question.id}
-              question={question}
-              isPending={isPending}
-              onReaction={onReaction}
-            />
-          ))}
+          {group.questions.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              このセクションにはまだ質問がありません。
+            </p>
+          ) : (
+            group.questions.map((question) => (
+              <QuestionItem
+                key={question.id}
+                question={question}
+                isPending={isPending}
+                onReaction={onReaction}
+              />
+            ))
+          )}
         </div>
       )}
     </section>
