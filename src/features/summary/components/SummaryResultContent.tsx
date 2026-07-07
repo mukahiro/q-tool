@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type {
   SummaryItem,
   SummarySourceQuestion,
@@ -10,12 +10,16 @@ type SummaryResultContentProps = {
   content: string;
   items: SummaryItem[];
   sourceQuestions: SummarySourceQuestion[];
+  showItemDetails?: boolean;
+  actionButton?: ReactNode;
 };
 
 export function SummaryResultContent({
   content,
   items,
   sourceQuestions,
+  showItemDetails = true,
+  actionButton,
 }: SummaryResultContentProps) {
   const [openItemKeys, setOpenItemKeys] = useState<string[]>([]);
   const questionMap = new Map(
@@ -41,26 +45,30 @@ export function SummaryResultContent({
         </p>
       </section>
 
-      <div className="space-y-3">
-        {displayItems.map((item, index) => (
-          <SummaryItemSection
-            key={`${item.text}-${index}`}
-            item={item}
-            itemKey={`summary-item-${index}`}
-            questionMap={questionMap}
-            isOpen={openItemKeys.includes(`summary-item-${index}`)}
-            onToggle={() => {
-              const itemKey = `summary-item-${index}`;
+      {!showItemDetails ? <div>{actionButton}</div> : null}
 
-              setOpenItemKeys((current) =>
-                current.includes(itemKey)
-                  ? current.filter((key) => key !== itemKey)
-                  : [...current, itemKey],
-              );
-            }}
-          />
-        ))}
-      </div>
+      {showItemDetails ? (
+        <div className="space-y-3">
+          {displayItems.map((item, index) => (
+            <SummaryItemSection
+              key={`${item.text}-${index}`}
+              item={item}
+              itemKey={`summary-item-${index}`}
+              questionMap={questionMap}
+              isOpen={openItemKeys.includes(`summary-item-${index}`)}
+              onToggle={() => {
+                const itemKey = `summary-item-${index}`;
+
+                setOpenItemKeys((current) =>
+                  current.includes(itemKey)
+                    ? current.filter((key) => key !== itemKey)
+                    : [...current, itemKey],
+                );
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
