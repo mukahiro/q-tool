@@ -96,6 +96,20 @@ export async function updateRoomStatus({
   }
 
   const documentsPath = `projects/${projectId}/databases/(default)/documents`;
+  const updateFields: Record<string, FirestoreValue> = {
+    is_active: { booleanValue: isActive },
+    updated_at: { timestampValue: updatedAt.toISOString() },
+  };
+  const updateFieldPaths = ["is_active", "updated_at"];
+
+  if (!isActive) {
+    updateFields.active_section_id = { nullValue: null };
+    updateFields.closed_at = {
+      timestampValue: closedAt?.toISOString() ?? updatedAt.toISOString(),
+    };
+    updateFieldPaths.push("active_section_id", "closed_at");
+  }
+
   const response = await fetch(
     `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`,
     {
@@ -109,19 +123,10 @@ export async function updateRoomStatus({
           {
             update: {
               name: `${documentsPath}/rooms/${roomId}`,
-              fields: {
-                is_active: { booleanValue: isActive },
-                updated_at: { timestampValue: updatedAt.toISOString() },
-                ...(isActive
-                  ? {}
-                  : {
-                      closed_at: {
-                        timestampValue:
-                          closedAt?.toISOString() ?? updatedAt.toISOString(),
-                      },
-                    }),
-              },
+              fields: updateFields,
             },
+            // updateMask がないと、指定していない既存フィールドが消える可能性があります。
+            updateMask: { fieldPaths: updateFieldPaths },
             currentDocument: { exists: true },
           },
         ],
