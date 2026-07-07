@@ -35,7 +35,7 @@ export function TeacherDashboard({
           <LogoutButton />
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2">
+        <section className="grid gap-4 md:grid-cols-3">
           <DashboardAction
             href="/rooms/new"
             label="ルームを作成"
@@ -48,6 +48,12 @@ export function TeacherDashboard({
             label="ルーム一覧"
             title="作成済みルームを見る"
             description="過去に作成したルームの状態、質問数、招待コードを確認します。"
+          />
+          <DashboardAction
+            href="/dashboard/profile"
+            label="プロフィール編集"
+            title="教師情報を整える"
+            description="ユーザー名、所属、担当科目など、教師アカウントのプロフィールを登録します。"
           />
         </section>
 
