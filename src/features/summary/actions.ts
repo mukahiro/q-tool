@@ -309,12 +309,13 @@ function buildSummaryPrompt(questions: SectionQuestion[]) {
   const questionLines = questions
     .map(
       (question) =>
-        `- ${question.sourceLabel}: question_id=${question.id}, content="${question.content}", reaction_count=${question.reactionCount}`,
+        `- ${question.sourceLabel}: question_id=${question.id}, empathy_count=${question.reactionCount}, summary_weight=${question.reactionCount + 1}, content="${question.content}"`,
     )
     .join("\n");
 
   return `あなたは授業中の質問を整理する日本語の教育アシスタントです。
 次の質問一覧を読み、教師が口頭で回答しやすいように要約してください。
+empathy_count は学生からの共感数です。summary_weight は要約時の重みで、値が大きい質問ほど優先して扱ってください。
 
 出力は必ず次の JSON だけにしてください。Markdown のコードブロックは使わないでください。
 {
@@ -332,6 +333,9 @@ function buildSummaryPrompt(questions: SectionQuestion[]) {
 - items は2〜5件にまとめる。
 - 各 item には title と text を必ず入れる。
 - source_question_ids には、質問一覧にある question_id だけを入れる。
+- summary_weight が高い質問は、content と items の優先順位・詳しさ・並び順に強く反映する。
+- 共感数が多い質問と似た質問が複数ある場合は、まとめて重要な論点として扱う。
+- 共感数が少ない質問でも、授業理解に重要なものは必要に応じて含める。
 - 参照した質問がない推測は書かない。
 
 質問一覧:
