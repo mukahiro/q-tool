@@ -18,7 +18,15 @@ export default async function RoomsPage() {
             <h1 className="mt-1 text-3xl font-semibold">ルーム一覧</h1>
           </div>
           {isLoggedIn ? (
-            <LogoutButton />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="/rooms/new"
+                className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                ルームを作成
+              </Link>
+              <LogoutButton />
+            </div>
           ) : (
             <Link
               href="/login"
