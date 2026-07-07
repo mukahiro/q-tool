@@ -1,6 +1,6 @@
 import { getFirebaseFirestore } from "@/lib/firebase/firestore";
 import { doc, getDoc, Timestamp } from "firebase/firestore";
-import type { Room } from "../types";
+import type { Room, Section } from "../types";
 
 export async function fetchRoomStatus(roomId: string) {
   try {
@@ -74,6 +74,51 @@ export async function fetchRoom(
     return {
       data: null,
       error: "ルーム情報の取得に失敗しました。時間をおいて再試行してください。",
+    };
+  }
+}
+
+/**
+ * 指定されたセクションIDからセクション情報を取得する
+ */
+export async function fetchSection(
+  roomId: string,
+  sectionId: string,
+): Promise<{ data: Section | null; error: string | null }> {
+  try {
+    const firestore = getFirebaseFirestore();
+    const sectionRef = doc(firestore, "rooms", roomId, "sections", sectionId);
+    const sectionSnap = await getDoc(sectionRef);
+
+    if (!sectionSnap.exists()) {
+      return {
+        data: null,
+        error: "セクションが見つかりません。",
+      };
+    }
+
+    const sectionData = sectionSnap.data();
+
+    const section: Section = {
+      id: sectionSnap.id,
+      room_id: sectionData.room_id,
+      name: sectionData.name,
+      order: sectionData.order ?? 0,
+      is_completed: Boolean(sectionData.is_completed),
+      question_count: sectionData.question_count ?? 0,
+      reaction_count: sectionData.reaction_count ?? 0,
+      summary_id: sectionData.summary_id ?? null,
+      created_at: sectionData.created_at,
+      completed_at: sectionData.completed_at ?? null,
+    };
+
+    return { data: section, error: null };
+  } catch (error) {
+    console.error("Failed to fetch section:", error);
+    return {
+      data: null,
+      error:
+        "セクション情報の取得に失敗しました。時間をおいて再試行してください。",
     };
   }
 }

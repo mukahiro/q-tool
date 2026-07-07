@@ -17,6 +17,38 @@ export type Room = {
 };
 
 /**
+ * rooms/{roomId}/sections/{sectionId} ドキュメントに対応する型
+ */
+export type Section = {
+  id: string;
+  room_id: string;
+  name: string;
+  order: number;
+  is_completed: boolean;
+  question_count: number;
+  reaction_count: number;
+  summary_id: string | null;
+  created_at: Timestamp;
+  completed_at: Timestamp | null;
+};
+
+/**
+ * セクション作成時に Firestore へ保存するデータ型
+ */
+export type SectionDocument = {
+  id: string;
+  room_id: string;
+  name: string;
+  order: number;
+  is_completed: boolean;
+  question_count: number;
+  reaction_count: number;
+  summary_id: string | null;
+  created_at: Date;
+  completed_at: Date | null;
+};
+
+/**
  * ルーム作成時に Firestore へ保存するデータ型
  */
 export type RoomDocument = {
@@ -51,6 +83,7 @@ export type RoomDisplay = {
   is_active: boolean;
   question_count: number;
   active_section_id: string | null;
+  active_section_name: string | null;
   created_at: Date;
   updated_at: Date;
   closed_at: Date | null;
