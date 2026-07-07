@@ -45,7 +45,7 @@ export function RoomInviteView({
               学生用入室URLを表示しています。
             </p>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 flex flex-col items-center">
               <Image
                 src={qrCodeDataUrl}
                 alt={`${roomName}の学生入室用QRコード`}
@@ -55,6 +55,14 @@ export function RoomInviteView({
                 priority
                 className="h-auto w-full max-w-80 rounded-md border border-slate-200"
               />
+
+              <a
+                href={qrCodeDataUrl}
+                download={`q-tool-${inviteCode}.png`}
+                className="mt-4 inline-flex w-full max-w-80 items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
+                QRコード画像を保存
+              </a>
             </div>
           </section>
 
