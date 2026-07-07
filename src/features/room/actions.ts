@@ -6,13 +6,23 @@ import { z } from "zod";
 import { getAuthToken } from "@/features/auth/actions";
 import { getVerifiedTeacherFromAuthCookie } from "@/features/auth/utils/server";
 import { getFirebaseAdminAuth, getFirebaseAdminDb } from "@/lib/firebase/admin";
-import type { CreateRoomState } from "./state";
-import type { InviteCodeDocument, RoomDisplay, RoomDocument } from "./types";
+import type {
+  CreateRoomState,
+  CreateSectionState,
+  EndRoomState,
+} from "./state";
+import type {
+  InviteCodeDocument,
+  RoomDisplay,
+  RoomDocument,
+  SectionDocument,
+} from "./types";
 import { ROOM_ERROR_MESSAGES } from "./utils/errors";
-import { fetchRoom, timestampToDate } from "./utils/firebase";
+import { fetchRoom, fetchSection, timestampToDate } from "./utils/firebase";
 import {
   createRoomDocuments,
   type CreateRoomDocumentsResult,
+  updateRoomStatus,
 } from "./utils/firestoreRest";
 import { generateInviteCode } from "./utils/inviteCode";
 
@@ -44,14 +54,26 @@ const createRoomSchema = z.object({
     .max(80, "ルーム名は80文字以内で入力してください。"),
 });
 
-export async function getTeacherRooms(): Promise<GetTeacherRoomsResult> {
+const createSectionSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .max(80, "セクション名は80文字以内で入力してください。"),
+});
+
+export async function getTeacherRooms(options?: {
+  limit?: number;
+}): Promise<GetTeacherRoomsResult> {
   const idToken = await getAuthToken();
 
-  return getTeacherRoomsByIdToken(idToken);
+  return getTeacherRoomsByIdToken(idToken, options);
 }
 
 async function getTeacherRoomsByIdToken(
   idToken: string | null,
+  options?: {
+    limit?: number;
+  },
 ): Promise<GetTeacherRoomsResult> {
   if (!idToken) {
     return {
@@ -76,11 +98,16 @@ async function getTeacherRoomsByIdToken(
   }
 
   try {
-    const roomsSnapshot = await getFirebaseAdminDb()
+    let roomsQuery = getFirebaseAdminDb()
       .collection("rooms")
       .where("teacher_id", "==", decodedToken.uid)
-      .orderBy("created_at", "desc")
-      .get();
+      .orderBy("created_at", "desc");
+
+    if (typeof options?.limit === "number" && options.limit > 0) {
+      roomsQuery = roomsQuery.limit(Math.floor(options.limit));
+    }
+
+    const roomsSnapshot = await roomsQuery.get();
 
     return {
       status: "success",
@@ -218,6 +245,8 @@ export async function getRoomDetail(
       };
     }
 
+    const decodedToken = await getFirebaseAdminAuth().verifyIdToken(authToken);
+
     const { data: room, error: roomFetchError } = await fetchRoom(roomId);
 
     if (roomFetchError || !room) {
@@ -227,6 +256,24 @@ export async function getRoomDetail(
       };
     }
 
+    if (room.teacher_id !== decodedToken.uid) {
+      return {
+        data: null,
+        error: ROOM_ERROR_MESSAGES.NOT_AUTHORIZED,
+      };
+    }
+
+    let activeSectionName: string | null = null;
+
+    if (room.active_section_id) {
+      const { data: section } = await fetchSection(
+        roomId,
+        room.active_section_id,
+      );
+
+      activeSectionName = section?.name ?? null;
+    }
+
     const roomDisplay: RoomDisplay = {
       id: room.id,
       name: room.name,
@@ -234,8 +281,10 @@ export async function getRoomDetail(
       is_active: room.is_active,
       question_count: room.question_count,
       active_section_id: room.active_section_id,
+      active_section_name: activeSectionName,
       created_at: timestampToDate(room.created_at) || new Date(),
       updated_at: timestampToDate(room.updated_at) || new Date(),
+      closed_at: timestampToDate(room.closed_at),
     };
 
     return { data: roomDisplay, error: null };
@@ -244,6 +293,258 @@ export async function getRoomDetail(
     return {
       data: null,
       error: ROOM_ERROR_MESSAGES.FETCH_FAILED,
+    };
+  }
+}
+
+export async function createSection(
+  roomId: string,
+  _previousState: CreateSectionState,
+  formData: FormData,
+): Promise<CreateSectionState> {
+  const teacher = await getVerifiedTeacherFromAuthCookie();
+
+  if (!teacher) {
+    return {
+      ok: false,
+      message: ROOM_ERROR_MESSAGES.NOT_LOGGED_IN,
+    };
+  }
+
+  const nameValue = formData.get("name");
+  const parsedFields = createSectionSchema.safeParse({
+    name: typeof nameValue === "string" ? nameValue : "",
+  });
+
+  if (!parsedFields.success) {
+    return {
+      ok: false,
+      message:
+        parsedFields.error.issues[0]?.message ??
+        "入力内容を確認してください。",
+    };
+  }
+
+  try {
+    const db = getFirebaseAdminDb();
+    const roomRef = db.collection("rooms").doc(roomId);
+    const roomSnap = await roomRef.get();
+
+    if (!roomSnap.exists) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_FOUND,
+      };
+    }
+
+    const roomData = roomSnap.data();
+
+    if (roomData?.teacher_id !== teacher.uid) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_AUTHORIZED,
+      };
+    }
+
+    if (roomData?.is_active === false) {
+      return {
+        ok: false,
+        message: "終了済みのルームにはセクションを作成できません。",
+      };
+    }
+
+    if (roomData?.active_section_id) {
+      return {
+        ok: false,
+        message:
+          "進行中のセクションがあります。先にセクション終了を押してください。",
+      };
+    }
+
+    const sectionsSnapshot = await roomRef.collection("sections").get();
+    const sectionOrder = sectionsSnapshot.size + 1;
+    const sectionName = parsedFields.data.name || `セクション${sectionOrder}`;
+    const sectionId = crypto.randomUUID();
+    const now = new Date();
+
+    const sectionDocument: SectionDocument = {
+      id: sectionId,
+      room_id: roomId,
+      name: sectionName,
+      order: sectionOrder,
+      is_completed: false,
+      question_count: 0,
+      reaction_count: 0,
+      summary_id: null,
+      created_at: now,
+      completed_at: null,
+    };
+
+    await roomRef.collection("sections").doc(sectionId).set(sectionDocument);
+
+    await roomRef.update({
+      active_section_id: sectionId,
+      updated_at: now,
+    });
+
+    return {
+      ok: true,
+      message: "セクションを作成しました。",
+      sectionId,
+      sectionName,
+      sectionOrder,
+    };
+  } catch (error) {
+    console.error("createSection error:", error);
+
+    return {
+      ok: false,
+      message: ROOM_ERROR_MESSAGES.SECTION_CREATE_FAILED,
+    };
+  }
+}
+
+export async function endSection(roomId: string): Promise<{
+  ok: boolean;
+  message: string;
+  sectionId?: string;
+  sectionName?: string;
+}> {
+  try {
+    const teacher = await getVerifiedTeacherFromAuthCookie();
+
+    if (!teacher) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_LOGGED_IN,
+      };
+    }
+
+    const db = getFirebaseAdminDb();
+    const roomRef = db.collection("rooms").doc(roomId);
+    const roomSnap = await roomRef.get();
+
+    if (!roomSnap.exists) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_FOUND,
+      };
+    }
+
+    const roomData = roomSnap.data();
+
+    if (roomData?.teacher_id !== teacher.uid) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_AUTHORIZED,
+      };
+    }
+
+    const activeSectionId = roomData?.active_section_id;
+
+    if (!activeSectionId) {
+      return {
+        ok: false,
+        message: "終了するセクションがありません。",
+      };
+    }
+
+    const sectionRef = roomRef.collection("sections").doc(activeSectionId);
+    const sectionSnap = await sectionRef.get();
+
+    if (!sectionSnap.exists) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_FOUND,
+      };
+    }
+
+    const now = new Date();
+    const sectionData = sectionSnap.data();
+    const sectionName =
+      typeof sectionData?.name === "string" && sectionData.name.trim().length > 0
+        ? sectionData.name
+        : "セクション";
+
+    await sectionRef.update({
+      is_completed: true,
+      completed_at: now,
+    });
+
+    await roomRef.update({
+      active_section_id: null,
+      updated_at: now,
+    });
+
+    return {
+      ok: true,
+      message: "セクションを終了しました。要約と回答の時間に進めます。",
+      sectionId: activeSectionId,
+      sectionName,
+    };
+  } catch (error) {
+    console.error("endSection error:", error);
+
+    return {
+      ok: false,
+      message: ROOM_ERROR_MESSAGES.SECTION_END_FAILED,
+    };
+  }
+}
+
+export async function endRoom(roomId: string): Promise<EndRoomState> {
+  try {
+    const teacher = await getVerifiedTeacherFromAuthCookie();
+
+    if (!teacher) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_LOGGED_IN,
+      };
+    }
+
+    const { data: room, error: roomFetchError } = await fetchRoom(roomId);
+
+    if (roomFetchError || !room) {
+      return {
+        ok: false,
+        message: roomFetchError || ROOM_ERROR_MESSAGES.NOT_FOUND,
+      };
+    }
+
+    if (room.teacher_id !== teacher.uid) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_AUTHORIZED,
+      };
+    }
+
+    const updatedAt = new Date();
+    const updated = await updateRoomStatus({
+      idToken: teacher.idToken,
+      roomId,
+      isActive: false,
+      updatedAt,
+      closedAt: updatedAt,
+    });
+
+    if (!updated) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.END_FAILED,
+      };
+    }
+
+    return {
+      ok: true,
+      message: "ルームを終了しました。",
+    };
+  } catch (error) {
+    console.error("endRoom error:", error);
+
+    return {
+      ok: false,
+      message: ROOM_ERROR_MESSAGES.END_FAILED,
     };
   }
 }

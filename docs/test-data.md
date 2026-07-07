@@ -35,6 +35,32 @@ Firebase Authentication に以下のテスト教師を作成します。
 
 Firebase Authentication の `uid` は自動生成されるため、実際の値を Firestore の `teacher_id` に合わせます。
 
+### 3.1 教師プロフィール
+
+プロフィール編集画面を確認するため、以下のドキュメントを任意で作成します。
+
+パス:
+
+```text
+teachers/teacher_demo_uid_001
+```
+
+データ:
+
+```json
+{
+  "uid": "teacher_demo_uid_001",
+  "email": "teacher@example.com",
+  "username": "山田先生",
+  "affiliation": "q-tool 高等学校",
+  "subject": "数学I",
+  "contact_url": "https://classroom.google.com/",
+  "bio": "授業中の疑問を気軽に投稿してください。",
+  "created_at": "2026-06-23T08:50:00+09:00",
+  "updated_at": "2026-06-23T08:50:00+09:00"
+}
+```
+
 ## 4. ルーム
 
 ### 4.1 開講中ルーム

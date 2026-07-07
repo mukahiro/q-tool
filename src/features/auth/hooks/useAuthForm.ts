@@ -37,28 +37,7 @@ export function useAuthForm() {
 
       unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
         setCurrentUser(user);
-
-        void (async () => {
-          try {
-            const result = user
-              ? await saveAuthToken(await user.getIdToken())
-              : await clearAuthToken();
-
-            if (!result.ok) {
-              setMessage(
-                result.message ?? "ログイン状態の同期に失敗しました。",
-              );
-            }
-          } catch (error) {
-            console.error("Firebase auth state sync failed:", error);
-            setMessage(
-              "ログイン状態の同期に失敗しました。時間をおいて再読み込みしてください。",
-            );
-          } finally {
-            setIsLoading(false);
-            router.refresh();
-          }
-        })();
+        setIsLoading(false);
       });
     } catch (error) {
       console.error("Firebase initialize failed:", error);
@@ -93,7 +72,7 @@ export function useAuthForm() {
         return;
       }
 
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     } catch (error) {
       setMessage(getFirebaseAuthMessage(error));

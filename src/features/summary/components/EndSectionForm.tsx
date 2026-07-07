@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { endActiveSection } from "@/features/summary/actions";
 import { SummaryResultContent } from "@/features/summary/components/SummaryResultContent";
 import { initialEndSectionState } from "@/features/summary/types";
@@ -10,16 +10,19 @@ import { initialEndSectionState } from "@/features/summary/types";
 type EndSectionFormProps = {
   roomId: string;
   hasActiveSection: boolean;
+  onEnded?: () => void;
 };
 
 export function EndSectionForm({
   roomId,
   hasActiveSection,
+  onEnded,
 }: EndSectionFormProps) {
   const router = useRouter();
   const [dismissedSummaryId, setDismissedSummaryId] = useState<string | null>(
     null,
   );
+  const handledSummaryIdRef = useRef<string | null>(null);
   const [state, formAction, isPending] = useActionState(
     endActiveSection,
     initialEndSectionState,
@@ -34,8 +37,14 @@ export function EndSectionForm({
       return;
     }
 
+    if (handledSummaryIdRef.current === state.summaryId) {
+      return;
+    }
+
+    handledSummaryIdRef.current = state.summaryId;
+    onEnded?.();
     router.refresh();
-  }, [router, state.ok, state.summaryId]);
+  }, [onEnded, router, state.ok, state.summaryId]);
 
   return (
     <>
