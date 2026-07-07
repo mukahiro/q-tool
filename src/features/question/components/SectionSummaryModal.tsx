@@ -197,6 +197,11 @@ function readSummaryItems(value: unknown): SummaryItem[] {
               (questionId): questionId is string => typeof questionId === "string",
             )
           : [],
+        interest_degree:
+          typeof candidate.interest_degree === "number" &&
+          Number.isFinite(candidate.interest_degree)
+            ? candidate.interest_degree
+            : 0,
       };
     })
     .filter((item): item is SummaryItem => Boolean(item));
