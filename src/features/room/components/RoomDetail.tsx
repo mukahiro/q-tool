@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { endSection } from "../actions";
+import { RoomSectionCreateModal } from "./RoomSectionCreateModal";
 import type { RoomDisplay } from "../types";
 
 /**
@@ -8,9 +11,14 @@ import type { RoomDisplay } from "../types";
  * 教師が特定ルームの情報を確認する画面
  */
 export function RoomDetail({ room }: { room: RoomDisplay }) {
+  const [roomState, setRoomState] = useState(room);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [isSectionEnding, setIsSectionEnding] = useState(false);
+
   // ルーム状態を日本語で表示
-  const statusText = room.is_active ? "開講中" : "終了";
-  const statusColor = room.is_active ? "text-emerald-700" : "text-slate-500";
+  const statusText = roomState.is_active ? "開講中" : "終了";
+  const statusColor = roomState.is_active ? "text-emerald-700" : "text-slate-500";
+  const isSectionActive = Boolean(roomState.active_section_id);
 
   // 日時をフォーマット
   const formatDate = (date: Date) => {
@@ -29,13 +37,16 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col justify-between sm:flex-row sm:items-start">
           <div>
-            <h1 className="text-2xl font-bold text-slate-950">{room.name}</h1>
+            <h1 className="text-2xl font-bold text-slate-950">{roomState.name}</h1>
             <p className={`mt-2 text-sm font-semibold ${statusColor}`}>
               {statusText}
             </p>
+            {feedbackMessage ? (
+              <p className="mt-2 text-sm text-emerald-700">{feedbackMessage}</p>
+            ) : null}
           </div>
           <div className="mt-4 inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 sm:mt-0">
-            招待コード: <span className="ml-2 font-mono font-bold">{room.invite_code}</span>
+            招待コード: <span className="ml-2 font-mono font-bold">{roomState.invite_code}</span>
           </div>
         </div>
       </section>
@@ -46,18 +57,72 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-500">質問数</p>
           <p className="mt-2 text-3xl font-bold text-slate-950">
-            {room.question_count}
+            {roomState.question_count}
           </p>
         </div>
 
         {/* 現在のセクション */}
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-sm font-semibold text-slate-500">現在のセクション</p>
-          <p className="mt-2 text-lg text-slate-950">
-            {room.active_section_id
-              ? `セクションID: ${room.active_section_id}`
-              : "セクションが開始されていません"}
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-500">現在のセクション</p>
+              <p className="mt-2 text-lg font-semibold text-slate-950">
+                {roomState.active_section_name ?? "セクションが開始されていません"}
+              </p>
+              <p className="mt-2 text-sm text-slate-600">
+                {isSectionActive
+                  ? "セクション終了で要約と回答の時間に進みます。"
+                  : "次のセクションを作成して授業を再開できます。"}
+              </p>
+            </div>
+
+            {isSectionActive ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSectionEnding(true);
+
+                  void (async () => {
+                    const result = await endSection(roomState.id);
+
+                    setIsSectionEnding(false);
+
+                    if (!result.ok) {
+                      setFeedbackMessage(result.message);
+                      return;
+                    }
+
+                    setRoomState((currentRoom) => ({
+                      ...currentRoom,
+                      active_section_id: null,
+                      active_section_name: null,
+                      updated_at: new Date(),
+                    }));
+                    setFeedbackMessage(result.message);
+                  })();
+                }}
+                disabled={isSectionEnding}
+                className="inline-flex cursor-pointer items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-amber-400"
+              >
+                {isSectionEnding ? "終了処理中..." : "セクション終了"}
+              </button>
+            ) : (
+              <RoomSectionCreateModal
+                roomId={roomState.id}
+                disabled={!roomState.is_active}
+                label="次のセクションを作成"
+                onCreated={({ sectionId, sectionName }) => {
+                  setRoomState((currentRoom) => ({
+                    ...currentRoom,
+                    active_section_id: sectionId,
+                    active_section_name: sectionName,
+                    updated_at: new Date(),
+                  }));
+                  setFeedbackMessage("セクションを作成しました。");
+                }}
+              />
+            )}
+          </div>
         </div>
       </section>
 
@@ -67,11 +132,11 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
         <dl className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between">
             <dt className="font-medium text-slate-600">作成日時</dt>
-            <dd className="text-slate-900">{formatDate(room.created_at)}</dd>
+            <dd className="text-slate-900">{formatDate(roomState.created_at)}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="font-medium text-slate-600">最終更新</dt>
-            <dd className="text-slate-900">{formatDate(room.updated_at)}</dd>
+            <dd className="text-slate-900">{formatDate(roomState.updated_at)}</dd>
           </div>
         </dl>
       </section>
@@ -82,7 +147,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
         <div className="flex flex-col gap-3 sm:flex-row">
           {/* 招待画面へのリンク */}
           <Link
-            href={`/rooms/${room.id}/invite`}
+            href={`/rooms/${roomState.id}/invite`}
             className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
             招待QR・PIN表示
@@ -90,7 +155,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
 
           {/* 要約一覧へのリンク */}
           <Link
-            href={`/rooms/${room.id}/summaries`}
+            href={`/rooms/${roomState.id}/summaries`}
             className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
           >
             AI要約を確認
