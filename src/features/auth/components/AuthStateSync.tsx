@@ -12,7 +12,11 @@ let lastSyncedToken: string | null | undefined;
  * Firebase Auth のログイン状態を、サーバーが読む httpOnly Cookie に同期する。
  * ログイン済みのまま直接ページを開いた時も、認証 Cookie を復旧できるようにする。
  */
-export function AuthStateSync() {
+export function AuthStateSync({
+  initialHasAuthToken,
+}: {
+  initialHasAuthToken: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -26,13 +30,22 @@ export function AuthStateSync() {
         void (async () => {
           try {
             if (!user) {
+              if (!initialHasAuthToken) {
+                lastSyncedToken = null;
+                return;
+              }
+
               if (lastSyncedToken === null) {
                 return;
               }
 
               lastSyncedToken = null;
               await clearAuthToken();
-              router.refresh();
+
+              if (initialHasAuthToken) {
+                router.refresh();
+              }
+
               return;
             }
 
@@ -59,7 +72,9 @@ export function AuthStateSync() {
               return;
             }
 
-            router.refresh();
+            if (!initialHasAuthToken) {
+              router.refresh();
+            }
           } catch (error) {
             console.error("Firebase auth state sync failed:", error);
           }
@@ -77,7 +92,7 @@ export function AuthStateSync() {
     return () => {
       isActive = false;
     };
-  }, [pathname, router]);
+  }, [initialHasAuthToken, pathname, router]);
 
   return null;
 }
