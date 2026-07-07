@@ -90,7 +90,7 @@ async function main() {
     invite_code: "MATH7K",
     active_section_id: "section_math_001_intro",
     is_active: true,
-    question_count: 3,
+    question_count: 4,
     created_at: timestamp("2026-06-23T09:00:00+09:00"),
     updated_at: timestamp("2026-06-23T09:20:00+09:00"),
     closed_at: null,
@@ -187,6 +187,65 @@ async function main() {
     created_at: timestamp("2026-06-23T09:32:00+09:00"),
   });
 
+  setBatchData(batch, db, "rooms/room_math_001/questions/question_math_004", {
+    id: "question_math_004",
+    room_id: "room_math_001",
+    section_id: null,
+    target_scope: "whole_class",
+    content: "今日の内容全体で、テスト前に特に復習した方がよいところはどこですか？",
+    student_session_id: "student_session_d",
+    reaction_count: 0,
+    created_at: timestamp("2026-06-23T09:38:00+09:00"),
+  });
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_history_001/sections/section_history_001_intro",
+    {
+      id: "section_history_001_intro",
+      room_id: "room_history_001",
+      name: "導入: 鎌倉幕府の成立",
+      order: 1,
+      is_completed: true,
+      question_count: 2,
+      reaction_count: 1,
+      summary_id: null,
+      created_at: timestamp("2026-06-20T10:05:00+09:00"),
+      completed_at: timestamp("2026-06-20T10:45:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_history_001/questions/question_history_001",
+    {
+      id: "question_history_001",
+      room_id: "room_history_001",
+      section_id: "section_history_001_intro",
+      content: "御恩と奉公の関係が少し混乱しています。具体例はありますか？",
+      student_session_id: "student_session_d",
+      reaction_count: 1,
+      created_at: timestamp("2026-06-20T10:18:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_history_001/questions/question_history_002",
+    {
+      id: "question_history_002",
+      room_id: "room_history_001",
+      section_id: "section_history_001_intro",
+      content: "源頼朝が幕府を開いた年は1192年と1185年のどちらで覚えるべきですか？",
+      student_session_id: "student_session_e",
+      reaction_count: 0,
+      created_at: timestamp("2026-06-20T10:27:00+09:00"),
+    },
+  );
+
   setBatchData(
     batch,
     db,
@@ -214,6 +273,26 @@ async function main() {
     {
       student_session_id: "student_session_a",
       created_at: timestamp("2026-06-23T09:18:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_math_001/questions/question_math_003/reactions/student_session_a",
+    {
+      student_session_id: "student_session_a",
+      created_at: timestamp("2026-06-23T09:36:00+09:00"),
+    },
+  );
+
+  setBatchData(
+    batch,
+    db,
+    "rooms/room_history_001/questions/question_history_001/reactions/student_session_e",
+    {
+      student_session_id: "student_session_e",
+      created_at: timestamp("2026-06-20T10:30:00+09:00"),
     },
   );
 
