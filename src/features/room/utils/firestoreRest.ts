@@ -20,6 +20,14 @@ type CreateRoomDocumentsInput = {
   inviteCode: InviteCodeDocument;
 };
 
+type UpdateRoomStatusInput = {
+  idToken: string;
+  roomId: string;
+  isActive: boolean;
+  updatedAt: Date;
+  closedAt?: Date;
+};
+
 export type CreateRoomDocumentsResult = "created" | "already-exists";
 
 export async function createRoomDocuments({
@@ -72,6 +80,66 @@ export async function createRoomDocuments({
   throw new Error(
     `Firestore commit failed (${response.status}): ${errorText}`,
   );
+}
+
+export async function updateRoomStatus({
+  idToken,
+  roomId,
+  isActive,
+  updatedAt,
+  closedAt,
+}: UpdateRoomStatusInput): Promise<boolean> {
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+  if (!projectId) {
+    throw new Error("Firebase project id is missing.");
+  }
+
+  const documentsPath = `projects/${projectId}/databases/(default)/documents`;
+  const updateFields: Record<string, FirestoreValue> = {
+    is_active: { booleanValue: isActive },
+    updated_at: { timestampValue: updatedAt.toISOString() },
+  };
+  const updateFieldPaths = ["is_active", "updated_at"];
+
+  if (!isActive) {
+    updateFields.active_section_id = { nullValue: null };
+    updateFields.closed_at = {
+      timestampValue: closedAt?.toISOString() ?? updatedAt.toISOString(),
+    };
+    updateFieldPaths.push("active_section_id", "closed_at");
+  }
+
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        writes: [
+          {
+            update: {
+              name: `${documentsPath}/rooms/${roomId}`,
+              fields: updateFields,
+            },
+            // updateMask がないと、指定していない既存フィールドが消える可能性があります。
+            updateMask: { fieldPaths: updateFieldPaths },
+            currentDocument: { exists: true },
+          },
+        ],
+      }),
+      cache: "no-store",
+    },
+  );
+
+  if (response.ok) {
+    return true;
+  }
+
+  throw new Error(`Firestore update failed (${response.status}): ${await response.text()}`);
 }
 
 function buildRoomDocument(

@@ -8,4 +8,6 @@ export const ROOM_ERROR_MESSAGES = {
   NOT_LOGGED_IN: "ログインして下さい。",
   FETCH_FAILED:
     "ルーム情報の取得に失敗しました。時間をおいて再試行してください。",
+  END_FAILED:
+    "ルームの終了処理に失敗しました。時間をおいて再試行してください。",
 } as const;
