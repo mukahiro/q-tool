@@ -67,6 +67,17 @@ export default async function Page({
 | 認証 | 教師ログインが必要 |
 | 主な内容 | ログイン状態、最近のルーム、ルーム作成導線 |
 
+### 3.3.1 `/dashboard/profile`
+
+教師プロフィールの編集画面です。
+
+| 項目 | 内容 |
+| :--- | :--- |
+| ファイル | `src/app/dashboard/profile/page.tsx` |
+| 主な利用者 | 教師 |
+| 認証 | 教師ログインが必要 |
+| 主な内容 | ユーザー名、所属、担当授業科目、連絡用URL、自己紹介の表示・編集 |
+
 ### 3.4 `/rooms`
 
 教師が自分のルーム一覧を確認する画面です。
@@ -204,6 +215,12 @@ Firestoreの取得、フォームの状態管理、エラー表示などは `fea
 
 ```text
 /dashboard -> /rooms/new -> /rooms/[roomId]
+```
+
+プロフィール編集:
+
+```text
+/dashboard -> /dashboard/profile
 ```
 
 招待表示:
