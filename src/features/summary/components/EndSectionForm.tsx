@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 import { endActiveSection } from "@/features/summary/actions";
 import { initialEndSectionState } from "@/features/summary/types";
 
@@ -13,36 +15,127 @@ export function EndSectionForm({
   roomId,
   hasActiveSection,
 }: EndSectionFormProps) {
+  const router = useRouter();
+  const [dismissedSummaryId, setDismissedSummaryId] = useState<string | null>(
+    null,
+  );
   const [state, formAction, isPending] = useActionState(
     endActiveSection,
     initialEndSectionState,
   );
+  const isModalOpen =
+    state.ok &&
+    Boolean(state.summaryContent) &&
+    state.summaryId !== dismissedSummaryId;
+
+  useEffect(() => {
+    if (!state.ok || !state.summaryId) {
+      return;
+    }
+
+    router.refresh();
+  }, [router, state.ok, state.summaryId]);
 
   return (
-    <form action={formAction} className="space-y-3">
-      <input type="hidden" name="roomId" value={roomId} />
+    <>
+      <form action={formAction} className="space-y-3">
+        <input type="hidden" name="roomId" value={roomId} />
 
-      {state.message ? (
-        <p
-          className={`rounded-md px-3 py-2 text-sm ${
-            state.ok
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-rose-50 text-rose-700"
-          }`}
-          role={state.ok ? "status" : "alert"}
-          aria-live="polite"
+        {state.message ? (
+          <p
+            className={`rounded-md px-3 py-2 text-sm ${
+              state.ok
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-rose-50 text-rose-700"
+            }`}
+            role={state.ok ? "status" : "alert"}
+            aria-live="polite"
+          >
+            {state.message}
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={!hasActiveSection || isPending}
+          className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
         >
-          {state.message}
-        </p>
-      ) : null}
+          {isPending ? "要約を作成中..." : "現在のセクションを終了"}
+        </button>
+      </form>
 
-      <button
-        type="submit"
-        disabled={!hasActiveSection || isPending}
-        className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
-      >
-        {isPending ? "要約を作成中..." : "現在のセクションを終了"}
-      </button>
-    </form>
+      {isModalOpen && state.summaryContent ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6"
+          role="presentation"
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="summary-result-title"
+            className="max-h-full w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
+          >
+            <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-emerald-700">
+                  セクション終了
+                </p>
+                <h3
+                  id="summary-result-title"
+                  className="mt-1 text-xl font-semibold text-slate-950"
+                >
+                  AI要約結果
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDismissedSummaryId(state.summaryId ?? null)}
+                className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                閉じる
+              </button>
+            </div>
+
+            <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+              {state.summaryContent}
+            </p>
+
+            {state.categories && state.categories.length > 0 ? (
+              <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                {state.categories.map((category) => (
+                  <div
+                    key={`${state.summaryId}-${category.title}`}
+                    className="rounded-md bg-slate-50 p-3"
+                  >
+                    <dt className="text-sm font-semibold text-slate-950">
+                      {category.title}
+                    </dt>
+                    <dd className="mt-1 text-xs text-slate-600">
+                      質問 {category.question_count} 件
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Link
+                href={`/rooms/${roomId}/summaries`}
+                className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                要約一覧を開く
+              </Link>
+              <button
+                type="button"
+                onClick={() => setDismissedSummaryId(state.summaryId ?? null)}
+                className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                ルーム詳細に戻る
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </>
   );
 }

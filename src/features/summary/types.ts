@@ -27,6 +27,8 @@ export type EndSectionState = {
   message: string;
   summaryId?: string;
   sectionId?: string;
+  summaryContent?: string;
+  categories?: SummaryCategory[];
 };
 
 export const initialEndSectionState: EndSectionState = {

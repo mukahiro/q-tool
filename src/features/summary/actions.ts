@@ -166,6 +166,8 @@ export async function endActiveSection(
       message: "セクションを終了し、AI要約を保存しました。",
       summaryId: summaryRef.id,
       sectionId: activeSectionId,
+      summaryContent: summary.content,
+      categories: summary.categories,
     };
   } catch (error) {
     if (error instanceof SummaryActionError) {
