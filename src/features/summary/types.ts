@@ -1,8 +1,16 @@
 import type { Timestamp } from "firebase/firestore";
 
-export type SummaryCategory = {
+export type SummaryItem = {
   title: string;
-  question_count: number;
+  text: string;
+  source_question_ids: string[];
+};
+
+export type SummarySourceQuestion = {
+  id: string;
+  sourceLabel: string;
+  content: string;
+  reactionCount: number;
 };
 
 export type SummaryDocument = {
@@ -10,7 +18,8 @@ export type SummaryDocument = {
   room_id: string;
   section_id: string;
   content: string;
-  categories: SummaryCategory[];
+  items?: SummaryItem[];
+  source_questions?: SummarySourceQuestion[];
   created_at: Timestamp;
 };
 
@@ -18,7 +27,8 @@ export type SummaryDisplay = {
   id: string;
   sectionId: string;
   content: string;
-  categories: SummaryCategory[];
+  items: SummaryItem[];
+  sourceQuestions: SummarySourceQuestion[];
   createdAt: string;
 };
 
@@ -28,7 +38,8 @@ export type EndSectionState = {
   summaryId?: string;
   sectionId?: string;
   summaryContent?: string;
-  categories?: SummaryCategory[];
+  summaryItems?: SummaryItem[];
+  sourceQuestions?: SummarySourceQuestion[];
 };
 
 export const initialEndSectionState: EndSectionState = {

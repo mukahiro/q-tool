@@ -111,8 +111,9 @@ inviteCodes/{inviteCode}
 | id | string | ドキュメントID |
 | room_id | string | 親ルームのID |
 | section_id | string | `rooms/{roomId}/sections/{sectionId}` への参照ID |
-| content | string | 要約テキスト |
-| categories | array / map | カテゴリ分けされた結果など |
+| content | string | 最初に表示する全体要約テキスト |
+| items | array | 要約を項目ごとに分けた配列。各項目に `title`、本文 `text`、参照元の質問ID配列 `source_question_ids` を持つ |
+| source_questions | array | 要約作成時に参照した元質問のスナップショット。質問ID、表示ラベル、本文、リアクション数を保存する |
 | created_at | timestamp | 生成日時 |
 
 ## 4. 参照関係

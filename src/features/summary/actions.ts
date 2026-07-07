@@ -9,13 +9,15 @@ import { getVerifiedTeacherFromAuthCookie } from "@/features/auth/utils/server";
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
 import type {
   EndSectionState,
-  SummaryCategory,
   SummaryDisplay,
+  SummaryItem,
+  SummarySourceQuestion,
 } from "./types";
 import { SUMMARY_ERROR_MESSAGES } from "./utils/errors";
 
 type SectionQuestion = {
   id: string;
+  sourceLabel: string;
   content: string;
   reactionCount: number;
   createdAtMillis: number;
@@ -23,7 +25,7 @@ type SectionQuestion = {
 
 type GeneratedSummary = {
   content: string;
-  categories: SummaryCategory[];
+  items: SummaryItem[];
 };
 
 export type GetRoomSummariesResult =
@@ -105,6 +107,7 @@ export async function endActiveSection(
 
     const questions = await getSectionQuestions(roomId, activeSectionId);
     const summary = await generateSectionSummary(questions);
+    const sourceQuestions = toSourceQuestions(questions);
     const summaryRef = roomRef.collection("summaries").doc();
 
     await db.runTransaction(async (transaction) => {
@@ -142,7 +145,8 @@ export async function endActiveSection(
         room_id: roomId,
         section_id: activeSectionId,
         content: summary.content,
-        categories: summary.categories,
+        items: summary.items,
+        source_questions: sourceQuestions,
         created_at: FieldValue.serverTimestamp(),
       });
 
@@ -167,7 +171,8 @@ export async function endActiveSection(
       summaryId: summaryRef.id,
       sectionId: activeSectionId,
       summaryContent: summary.content,
-      categories: summary.categories,
+      summaryItems: summary.items,
+      sourceQuestions,
     };
   } catch (error) {
     if (error instanceof SummaryActionError) {
@@ -250,9 +255,11 @@ async function getSectionQuestions(roomId: string, sectionId: string) {
   return snapshot.docs
     .map((questionDoc): SectionQuestion => {
       const data = questionDoc.data();
+      const sourceLabel = `Q${snapshot.docs.indexOf(questionDoc) + 1}`;
 
       return {
         id: questionDoc.id,
+        sourceLabel,
         content: readString(data.content, ""),
         reactionCount: readNumber(data.reaction_count),
         createdAtMillis: toMillis(data.created_at),
@@ -268,7 +275,13 @@ async function generateSectionSummary(
   if (questions.length === 0) {
     return {
       content: "このセクションでは質問が投稿されませんでした。",
-      categories: [],
+      items: [
+        {
+          text: "このセクションでは質問が投稿されませんでした。",
+          title: "質問なし",
+          source_question_ids: [],
+        },
+      ],
     };
   }
 
@@ -289,14 +302,14 @@ async function generateSectionSummary(
   const result = await model.generateContent(buildSummaryPrompt(questions));
   const text = result.response.text().trim();
 
-  return parseGeminiSummary(text);
+  return parseGeminiSummary(text, questions);
 }
 
 function buildSummaryPrompt(questions: SectionQuestion[]) {
   const questionLines = questions
     .map(
-      (question, index) =>
-        `${index + 1}. ${question.content}（リアクション: ${question.reactionCount}）`,
+      (question) =>
+        `- ${question.sourceLabel}: question_id=${question.id}, content="${question.content}", reaction_count=${question.reactionCount}`,
     )
     .join("\n");
 
@@ -306,35 +319,52 @@ function buildSummaryPrompt(questions: SectionQuestion[]) {
 出力は必ず次の JSON だけにしてください。Markdown のコードブロックは使わないでください。
 {
   "content": "教師向けの要約文。重要な疑問点、混乱が多い箇所、回答の優先度が伝わるように200〜400字で書く。",
-  "categories": [
-    { "title": "カテゴリ名", "question_count": 1 }
+  "items": [
+    {
+      "title": "要約項目の短い見出し",
+      "text": "要約の一項目。どの質問群から判断したか分かる粒度で書く。",
+      "source_question_ids": ["question_idをそのまま入れる"]
+    }
   ]
 }
+
+必ず守ること:
+- items は2〜5件にまとめる。
+- 各 item には title と text を必ず入れる。
+- source_question_ids には、質問一覧にある question_id だけを入れる。
+- 参照した質問がない推測は書かない。
 
 質問一覧:
 ${questionLines}`;
 }
 
-function parseGeminiSummary(text: string): GeneratedSummary {
+function parseGeminiSummary(
+  text: string,
+  questions: SectionQuestion[],
+): GeneratedSummary {
   const jsonText = extractJsonObject(text);
+  const validQuestionIds = new Set(questions.map((question) => question.id));
 
   try {
     const parsed = JSON.parse(jsonText) as {
       content?: unknown;
-      categories?: unknown;
+      items?: unknown;
     };
     const content = readString(parsed.content, text);
-    const categories = Array.isArray(parsed.categories)
-      ? parsed.categories
-          .map((category) => toSummaryCategory(category))
-          .filter((category): category is SummaryCategory => category !== null)
+    const items = Array.isArray(parsed.items)
+      ? parsed.items
+          .map((item) => toSummaryItem(item, validQuestionIds))
+          .filter((item): item is SummaryItem => item !== null)
       : [];
 
-    return { content, categories };
+    return {
+      content,
+      items: items.length > 0 ? items : toFallbackSummaryItems(content),
+    };
   } catch {
     return {
       content: text,
-      categories: [],
+      items: toFallbackSummaryItems(text),
     };
   }
 }
@@ -350,36 +380,114 @@ function extractJsonObject(text: string) {
   return text.slice(startIndex, endIndex + 1);
 }
 
-function toSummaryCategory(value: unknown): SummaryCategory | null {
+function toSummaryItem(
+  value: unknown,
+  validQuestionIds: Set<string>,
+): SummaryItem | null {
   if (typeof value !== "object" || value === null) {
     return null;
   }
 
   const data = value as Record<string, unknown>;
-  const title = readString(data.title, "");
+  const text = readString(data.text, "");
+  const title = readString(data.title, "要約項目");
 
-  if (!title) {
+  if (!text) {
     return null;
   }
 
   return {
     title,
-    question_count: readNumber(data.question_count),
+    text,
+    source_question_ids: readQuestionIds(
+      data.source_question_ids,
+      validQuestionIds,
+    ),
   };
 }
 
 function toSummaryDisplay(id: string, data: DocumentData): SummaryDisplay {
+  const sourceQuestions = Array.isArray(data.source_questions)
+    ? data.source_questions
+        .map((question) => toSourceQuestion(question))
+        .filter(
+          (question): question is SummarySourceQuestion => question !== null,
+        )
+    : [];
+  const sourceQuestionIds = new Set(
+    sourceQuestions.map((question) => question.id),
+  );
+  const content = readString(data.content, "要約本文がありません。");
+  const items = Array.isArray(data.items)
+    ? data.items
+        .map((item) => toSummaryItem(item, sourceQuestionIds))
+        .filter((item): item is SummaryItem => item !== null)
+    : [];
+
   return {
     id,
     sectionId: readString(data.section_id, "不明なセクション"),
-    content: readString(data.content, "要約本文がありません。"),
-    categories: Array.isArray(data.categories)
-      ? data.categories
-          .map((category) => toSummaryCategory(category))
-          .filter((category): category is SummaryCategory => category !== null)
-      : [],
+    content,
+    items: items.length > 0 ? items : toFallbackSummaryItems(content),
+    sourceQuestions,
     createdAt: toIsoString(data.created_at),
   };
+}
+
+function toSourceQuestions(
+  questions: SectionQuestion[],
+): SummarySourceQuestion[] {
+  return questions.map((question) => ({
+    id: question.id,
+    sourceLabel: question.sourceLabel,
+    content: question.content,
+    reactionCount: question.reactionCount,
+  }));
+}
+
+function toSourceQuestion(value: unknown): SummarySourceQuestion | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const data = value as Record<string, unknown>;
+  const id = readString(data.id, "");
+  const content = readString(data.content, "");
+
+  if (!id || !content) {
+    return null;
+  }
+
+  return {
+    id,
+    sourceLabel: readString(data.sourceLabel, id),
+    content,
+    reactionCount: readNumber(data.reactionCount),
+  };
+}
+
+function toFallbackSummaryItems(content: string): SummaryItem[] {
+  return [
+    {
+      title: "全体要約",
+      text: content,
+      source_question_ids: [],
+    },
+  ];
+}
+
+function readQuestionIds(value: unknown, validQuestionIds?: Set<string>) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => {
+    if (typeof item !== "string" || item.trim().length === 0) {
+      return false;
+    }
+
+    return validQuestionIds ? validQuestionIds.has(item) : true;
+  });
 }
 
 function readString(value: unknown, fallback: string) {

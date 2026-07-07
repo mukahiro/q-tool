@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { endActiveSection } from "@/features/summary/actions";
+import { SummaryResultContent } from "@/features/summary/components/SummaryResultContent";
 import { initialEndSectionState } from "@/features/summary/types";
 
 type EndSectionFormProps = {
@@ -96,27 +97,13 @@ export function EndSectionForm({
               </button>
             </div>
 
-            <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-              {state.summaryContent}
-            </p>
-
-            {state.categories && state.categories.length > 0 ? (
-              <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-                {state.categories.map((category) => (
-                  <div
-                    key={`${state.summaryId}-${category.title}`}
-                    className="rounded-md bg-slate-50 p-3"
-                  >
-                    <dt className="text-sm font-semibold text-slate-950">
-                      {category.title}
-                    </dt>
-                    <dd className="mt-1 text-xs text-slate-600">
-                      質問 {category.question_count} 件
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
+            <div className="mt-5">
+              <SummaryResultContent
+                content={state.summaryContent}
+                items={state.summaryItems ?? []}
+                sourceQuestions={state.sourceQuestions ?? []}
+              />
+            </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Link

@@ -1,4 +1,5 @@
 import type { SummaryDisplay } from "@/features/summary/types";
+import { SummaryResultContent } from "./SummaryResultContent";
 
 type SummaryListProps = {
   summaries: SummaryDisplay[];
@@ -47,27 +48,13 @@ export function SummaryList({ summaries }: SummaryListProps) {
             </p>
           </div>
 
-          <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-            {summary.content}
-          </p>
-
-          {summary.categories.length > 0 ? (
-            <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-              {summary.categories.map((category) => (
-                <div
-                  key={`${summary.id}-${category.title}`}
-                  className="rounded-md bg-slate-50 p-3"
-                >
-                  <dt className="text-sm font-semibold text-slate-950">
-                    {category.title}
-                  </dt>
-                  <dd className="mt-1 text-xs text-slate-600">
-                    質問 {category.question_count} 件
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
+          <div className="mt-4">
+            <SummaryResultContent
+              content={summary.content}
+              items={summary.items}
+              sourceQuestions={summary.sourceQuestions}
+            />
+          </div>
         </article>
       ))}
     </section>
