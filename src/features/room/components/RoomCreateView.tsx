@@ -10,7 +10,7 @@ export function RoomCreateView({
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950">
       <div className="mx-auto w-full max-w-3xl">
         <Link
-          href="/"
+          href="/dashboard"
           className="text-sm font-medium text-slate-600 underline-offset-4 hover:underline"
         >
           ダッシュボードへ戻る

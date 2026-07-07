@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Q Tool icon</title>
+  <desc id="desc">A minimal speech-bubble Q icon.</desc>
+  <rect width="512" height="512" rx="136" fill="#00866A"/>
+  <path d="M256 112c-87.9 0-160 64.6-160 144s72.1 144 160 144c28.4 0 55.1-6.7 78.3-18.7L408 425l-21.7-77.2C404.5 323.5 416 293.9 416 261c0-79.4-72.1-149-160-149Z" fill="#FFFFFF"/>
+  <circle cx="256" cy="257" r="70" fill="#00866A"/>
+  <path d="M301 302l61 61" stroke="#00866A" stroke-width="31" stroke-linecap="round"/>
+</svg>
