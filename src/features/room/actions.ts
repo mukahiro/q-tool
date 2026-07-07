@@ -1,10 +1,8 @@
 "use server";
 
-import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { z } from "zod";
 import { getAuthToken } from "@/features/auth/actions";
 import { getVerifiedTeacherFromAuthCookie } from "@/features/auth/utils/server";
-import { getFirebaseFirestore } from "@/lib/firebase/firestore";
 import type { CreateRoomState, EndRoomState } from "./state";
 import type { InviteCodeDocument, RoomDisplay, RoomDocument } from "./types";
 import {
@@ -226,72 +224,6 @@ export async function endRoom(roomId: string): Promise<EndRoomState> {
     return {
       ok: false,
       message: ROOM_ERROR_MESSAGES.END_FAILED,
-    };
-  }
-}
-
-export async function submitStudentQuestion(
-  roomId: string,
-  content: string,
-  studentSessionId: string,
-): Promise<{ ok: boolean; message: string }> {
-  const trimmedContent = content.trim();
-
-  if (!trimmedContent) {
-    return {
-      ok: false,
-      message: "質問内容を入力してください。",
-    };
-  }
-
-  if (!studentSessionId) {
-    return {
-      ok: false,
-      message: "セッション情報が見つかりません。再読み込みしてください。",
-    };
-  }
-
-  try {
-    const { data: room, error: roomFetchError } = await fetchRoom(roomId);
-
-    if (roomFetchError || !room) {
-      return {
-        ok: false,
-        message: roomFetchError || ROOM_ERROR_MESSAGES.NOT_FOUND,
-      };
-    }
-
-    if (!room.is_active) {
-      return {
-        ok: false,
-        message: "このルームは終了しました。新しい質問は投稿できません。",
-      };
-    }
-
-    const firestore = getFirebaseFirestore();
-    await addDoc(collection(firestore, "rooms", roomId, "questions"), {
-      content: trimmedContent,
-      student_session_id: studentSessionId,
-      created_at: new Date(),
-      room_id: roomId,
-      reaction_count: 0,
-    });
-
-    await updateDoc(doc(firestore, "rooms", roomId), {
-      question_count: (room.question_count || 0) + 1,
-      updated_at: new Date(),
-    });
-
-    return {
-      ok: true,
-      message: "質問を送信しました。",
-    };
-  } catch (error) {
-    console.error("submitStudentQuestion error:", error);
-
-    return {
-      ok: false,
-      message: "質問の送信に失敗しました。時間をおいて再試行してください。",
     };
   }
 }
