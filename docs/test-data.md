@@ -55,7 +55,7 @@ rooms/room_math_001
   "invite_code": "MATH7K",
   "active_section_id": "section_math_001_intro",
   "is_active": true,
-  "question_count": 3,
+  "question_count": 4,
   "created_at": "2026-06-23T09:00:00+09:00",
   "updated_at": "2026-06-23T09:20:00+09:00",
   "closed_at": null
@@ -177,6 +177,31 @@ rooms/room_math_001/sections/section_math_001_basic
 }
 ```
 
+### 6.3 終了済みルームのセクション
+
+パス:
+
+```text
+rooms/room_history_001/sections/section_history_001_intro
+```
+
+データ:
+
+```json
+{
+  "id": "section_history_001_intro",
+  "room_id": "room_history_001",
+  "name": "導入: 鎌倉幕府の成立",
+  "order": 1,
+  "is_completed": true,
+  "question_count": 2,
+  "reaction_count": 1,
+  "summary_id": null,
+  "created_at": "2026-06-20T10:05:00+09:00",
+  "completed_at": "2026-06-20T10:45:00+09:00"
+}
+```
+
 ## 7. 質問
 
 ### 7.1 開講中セクションの質問
@@ -243,6 +268,71 @@ rooms/room_math_001/questions/question_math_003
 }
 ```
 
+### 7.3 授業全体向けの質問
+
+パス:
+
+```text
+rooms/room_math_001/questions/question_math_004
+```
+
+データ:
+
+```json
+{
+  "id": "question_math_004",
+  "room_id": "room_math_001",
+  "section_id": null,
+  "target_scope": "whole_class",
+  "content": "今日の内容全体で、テスト前に特に復習した方がよいところはどこですか？",
+  "student_session_id": "student_session_d",
+  "reaction_count": 0,
+  "created_at": "2026-06-23T09:38:00+09:00"
+}
+```
+
+### 7.4 終了済みルームの質問
+
+パス:
+
+```text
+rooms/room_history_001/questions/question_history_001
+```
+
+データ:
+
+```json
+{
+  "id": "question_history_001",
+  "room_id": "room_history_001",
+  "section_id": "section_history_001_intro",
+  "content": "御恩と奉公の関係が少し混乱しています。具体例はありますか？",
+  "student_session_id": "student_session_d",
+  "reaction_count": 1,
+  "created_at": "2026-06-20T10:18:00+09:00"
+}
+```
+
+パス:
+
+```text
+rooms/room_history_001/questions/question_history_002
+```
+
+データ:
+
+```json
+{
+  "id": "question_history_002",
+  "room_id": "room_history_001",
+  "section_id": "section_history_001_intro",
+  "content": "源頼朝が幕府を開いた年は1192年と1185年のどちらで覚えるべきですか？",
+  "student_session_id": "student_session_e",
+  "reaction_count": 0,
+  "created_at": "2026-06-20T10:27:00+09:00"
+}
+```
+
 ## 8. リアクション
 
 リアクションは、学生セッションIDをドキュメントIDにします。
@@ -292,6 +382,36 @@ rooms/room_math_001/questions/question_math_002/reactions/student_session_a
 }
 ```
 
+パス:
+
+```text
+rooms/room_math_001/questions/question_math_003/reactions/student_session_a
+```
+
+データ:
+
+```json
+{
+  "student_session_id": "student_session_a",
+  "created_at": "2026-06-23T09:36:00+09:00"
+}
+```
+
+パス:
+
+```text
+rooms/room_history_001/questions/question_history_001/reactions/student_session_e
+```
+
+データ:
+
+```json
+{
+  "student_session_id": "student_session_e",
+  "created_at": "2026-06-20T10:30:00+09:00"
+}
+```
+
 ## 9. AI要約
 
 パス:
@@ -336,6 +456,7 @@ rooms/room_math_001/summaries/summary_math_001_basic
 | PIN入力 | `/join` |
 | 招待URL | `/join/MATH7K` |
 | 学生質問画面 | `/rooms/room_math_001/chat` |
+| 終了済み学生質問画面 | `/rooms/room_history_001/chat` |
 
 ## 11. 注意点
 
