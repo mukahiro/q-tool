@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resolveJoinRoom } from "@/features/join/actions";
 import { clearJoinAttemptLimit } from "@/features/join/utils/joinAttemptLimit";
-import { getOrCreateStudentSessionId } from "@/features/join/utils/studentSession";
 
 type JoinByInviteCodeProps = {
   inviteCode: string;
@@ -29,7 +28,6 @@ export function JoinByInviteCode({
 
       if (result.status === "success") {
         clearJoinAttemptLimit();
-        getOrCreateStudentSessionId();
 
         router.replace(`/rooms/${result.roomId}/chat`);
         return;

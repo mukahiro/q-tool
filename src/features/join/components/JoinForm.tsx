@@ -12,7 +12,6 @@ import {
   recordFailedJoinAttempt,
   type JoinAttemptStatus,
 } from "@/features/join/utils/joinAttemptLimit";
-import { getOrCreateStudentSessionId } from "@/features/join/utils/studentSession";
 
 const INITIAL_ATTEMPT_STATUS: JoinAttemptStatus = {
   failedAttempts: 0,
@@ -77,7 +76,6 @@ export function JoinForm() {
 
         if (result.status === "success") {
           clearJoinAttemptLimit();
-          getOrCreateStudentSessionId();
 
           router.push(`/rooms/${result.roomId}/chat`);
           return;
