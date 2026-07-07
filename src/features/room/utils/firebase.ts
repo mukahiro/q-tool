@@ -2,6 +2,33 @@ import { getFirebaseFirestore } from "@/lib/firebase/firestore";
 import { doc, getDoc, Timestamp } from "firebase/firestore";
 import type { Room, Section } from "../types";
 
+export async function fetchRoomStatus(roomId: string) {
+  try {
+    const firestore = getFirebaseFirestore();
+    const roomRef = doc(firestore, "rooms", roomId);
+    const roomSnap = await getDoc(roomRef);
+
+    if (!roomSnap.exists()) {
+      return { data: null, error: "ルームが見つかりません。" };
+    }
+
+    const roomData = roomSnap.data();
+
+    return {
+      data: {
+        is_active: roomData.is_active,
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Failed to fetch room status:", error);
+    return {
+      data: null,
+      error: "ルーム状態の取得に失敗しました。",
+    };
+  }
+}
+
 /**
  * 指定されたルームIDからルーム情報を取得する
  * @param roomId - ルームID

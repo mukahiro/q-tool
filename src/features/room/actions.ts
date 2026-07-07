@@ -6,7 +6,11 @@ import { z } from "zod";
 import { getAuthToken } from "@/features/auth/actions";
 import { getVerifiedTeacherFromAuthCookie } from "@/features/auth/utils/server";
 import { getFirebaseAdminAuth, getFirebaseAdminDb } from "@/lib/firebase/admin";
-import type { CreateRoomState, CreateSectionState } from "./state";
+import type {
+  CreateRoomState,
+  CreateSectionState,
+  EndRoomState,
+} from "./state";
 import type {
   InviteCodeDocument,
   RoomDisplay,
@@ -18,6 +22,7 @@ import { fetchRoom, fetchSection, timestampToDate } from "./utils/firebase";
 import {
   createRoomDocuments,
   type CreateRoomDocumentsResult,
+  updateRoomStatus,
 } from "./utils/firestoreRest";
 import { generateInviteCode } from "./utils/inviteCode";
 
@@ -279,6 +284,7 @@ export async function getRoomDetail(
       active_section_name: activeSectionName,
       created_at: timestampToDate(room.created_at) || new Date(),
       updated_at: timestampToDate(room.updated_at) || new Date(),
+      closed_at: timestampToDate(room.closed_at),
     };
 
     return { data: roomDisplay, error: null };
@@ -482,6 +488,63 @@ export async function endSection(roomId: string): Promise<{
     return {
       ok: false,
       message: ROOM_ERROR_MESSAGES.SECTION_END_FAILED,
+    };
+  }
+}
+
+export async function endRoom(roomId: string): Promise<EndRoomState> {
+  try {
+    const teacher = await getVerifiedTeacherFromAuthCookie();
+
+    if (!teacher) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_LOGGED_IN,
+      };
+    }
+
+    const { data: room, error: roomFetchError } = await fetchRoom(roomId);
+
+    if (roomFetchError || !room) {
+      return {
+        ok: false,
+        message: roomFetchError || ROOM_ERROR_MESSAGES.NOT_FOUND,
+      };
+    }
+
+    if (room.teacher_id !== teacher.uid) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.NOT_AUTHORIZED,
+      };
+    }
+
+    const updatedAt = new Date();
+    const updated = await updateRoomStatus({
+      idToken: teacher.idToken,
+      roomId,
+      isActive: false,
+      updatedAt,
+      closedAt: updatedAt,
+    });
+
+    if (!updated) {
+      return {
+        ok: false,
+        message: ROOM_ERROR_MESSAGES.END_FAILED,
+      };
+    }
+
+    return {
+      ok: true,
+      message: "ルームを終了しました。",
+    };
+  } catch (error) {
+    console.error("endRoom error:", error);
+
+    return {
+      ok: false,
+      message: ROOM_ERROR_MESSAGES.END_FAILED,
     };
   }
 }

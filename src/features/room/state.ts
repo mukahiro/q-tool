@@ -13,6 +13,11 @@ export type CreateSectionState = {
   sectionOrder?: number;
 };
 
+export type EndRoomState = {
+  ok: boolean;
+  message: string | null;
+};
+
 export const initialCreateRoomState: CreateRoomState = {
   ok: false,
   message: null,

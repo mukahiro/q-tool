@@ -12,4 +12,6 @@ export const ROOM_ERROR_MESSAGES = {
     "セクションの作成に失敗しました。時間をおいて再試行してください。",
   SECTION_END_FAILED:
     "セクションの終了に失敗しました。時間をおいて再試行してください。",
+  END_FAILED:
+    "ルームの終了処理に失敗しました。時間をおいて再試行してください。",
 } as const;
