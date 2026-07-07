@@ -10,6 +10,7 @@
     "seed:test-data": "node scripts/seed-test-data.mjs"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "firebase": "^12.15.0",
     "firebase-admin": "^14.1.0",
     "lucide-react": "^1.23.0",

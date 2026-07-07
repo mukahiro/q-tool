@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
 import type { RoomDisplay } from "../types";
 
 /**
@@ -79,6 +80,10 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
       {/* アクションリンク */}
       <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-slate-500">次のステップ</h2>
+        <EndSectionForm
+          roomId={room.id}
+          hasActiveSection={Boolean(room.active_section_id)}
+        />
         <div className="flex flex-col gap-3 sm:flex-row">
           {/* 招待画面へのリンク */}
           <Link
