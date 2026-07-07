@@ -2,9 +2,11 @@
 
 import { onIdTokenChanged } from "firebase/auth";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { clearAuthToken, saveAuthToken } from "../actions";
 import { getFirebaseAuth } from "@/lib/firebase/client";
+
+let lastSyncedToken: string | null | undefined;
 
 /**
  * Firebase Auth のログイン状態を、サーバーが読む httpOnly Cookie に同期する。
@@ -13,7 +15,6 @@ import { getFirebaseAuth } from "@/lib/firebase/client";
 export function AuthStateSync() {
   const pathname = usePathname();
   const router = useRouter();
-  const lastSyncedTokenRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     let isActive = true;
@@ -25,11 +26,11 @@ export function AuthStateSync() {
         void (async () => {
           try {
             if (!user) {
-              if (lastSyncedTokenRef.current === null) {
+              if (lastSyncedToken === null) {
                 return;
               }
 
-              lastSyncedTokenRef.current = null;
+              lastSyncedToken = null;
               await clearAuthToken();
               router.refresh();
               return;
@@ -37,7 +38,7 @@ export function AuthStateSync() {
 
             const idToken = await user.getIdToken();
 
-            if (!isActive || lastSyncedTokenRef.current === idToken) {
+            if (!isActive || lastSyncedToken === idToken) {
               return;
             }
 
@@ -51,7 +52,7 @@ export function AuthStateSync() {
               return;
             }
 
-            lastSyncedTokenRef.current = idToken;
+            lastSyncedToken = idToken;
 
             if (pathname === "/login") {
               router.replace("/dashboard");
