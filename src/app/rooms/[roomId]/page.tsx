@@ -36,7 +36,15 @@ export default async function RoomDetailPage({ params }: Props) {
             <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
             <h1 className="mt-1 text-3xl font-semibold">ルーム詳細</h1>
           </div>
-          <LogoutButton />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href="/rooms"
+              className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
+            >
+              ルーム一覧に戻る
+            </Link>
+            <LogoutButton />
+          </div>
         </header>
 
         {/* エラー表示 */}
@@ -45,10 +53,10 @@ export default async function RoomDetailPage({ params }: Props) {
             <p className="text-sm font-semibold text-red-700">{error}</p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Link
-                href="/"
+                href="/rooms"
                 className="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
               >
-                ダッシュボードに戻る
+                ルーム一覧に戻る
               </Link>
             </div>
           </div>

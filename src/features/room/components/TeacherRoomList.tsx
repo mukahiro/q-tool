@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { TeacherRoomSummary } from "../actions";
 
 type TeacherRoomListProps = {
@@ -88,6 +89,13 @@ export function TeacherRoomList({ rooms }: TeacherRoomListProps) {
                 value={room.isActive ? "開講中" : "終了済み"}
               />
             </dl>
+
+            <Link
+              href={`/rooms/${room.id}`}
+              className="mt-5 inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              詳細を見る
+            </Link>
           </article>
         ))}
       </div>
