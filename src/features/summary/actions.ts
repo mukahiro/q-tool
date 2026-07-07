@@ -221,15 +221,21 @@ export async function getRoomSummaries(
       };
     }
 
-    const summariesSnapshot = await roomSnapshot.ref
-      .collection("summaries")
-      .orderBy("created_at", "desc")
-      .get();
+    const [summariesSnapshot, sectionsSnapshot] = await Promise.all([
+      roomSnapshot.ref.collection("summaries").orderBy("created_at", "desc").get(),
+      roomSnapshot.ref.collection("sections").get(),
+    ]);
+    const sectionNameById = new Map(
+      sectionsSnapshot.docs.map((sectionDoc) => [
+        sectionDoc.id,
+        readString(sectionDoc.data().name, "不明なセクション"),
+      ]),
+    );
 
     return {
       ok: true,
       summaries: summariesSnapshot.docs.map((summaryDoc) =>
-        toSummaryDisplay(summaryDoc.id, summaryDoc.data()),
+        toSummaryDisplay(summaryDoc.id, summaryDoc.data(), sectionNameById),
       ),
       message: null,
     };
@@ -410,7 +416,11 @@ function toSummaryItem(
   };
 }
 
-function toSummaryDisplay(id: string, data: DocumentData): SummaryDisplay {
+function toSummaryDisplay(
+  id: string,
+  data: DocumentData,
+  sectionNameById: Map<string, string>,
+): SummaryDisplay {
   const sourceQuestions = Array.isArray(data.source_questions)
     ? data.source_questions
         .map((question) => toSourceQuestion(question))
@@ -427,10 +437,12 @@ function toSummaryDisplay(id: string, data: DocumentData): SummaryDisplay {
         .map((item) => toSummaryItem(item, sourceQuestionIds))
         .filter((item): item is SummaryItem => item !== null)
     : [];
+  const sectionId = readString(data.section_id, "不明なセクション");
 
   return {
     id,
-    sectionId: readString(data.section_id, "不明なセクション"),
+    sectionId,
+    sectionName: sectionNameById.get(sectionId) ?? "不明なセクション",
     content,
     items: items.length > 0 ? items : toFallbackSummaryItems(content),
     sourceQuestions,

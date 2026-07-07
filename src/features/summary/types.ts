@@ -26,6 +26,7 @@ export type SummaryDocument = {
 export type SummaryDisplay = {
   id: string;
   sectionId: string;
+  sectionName: string;
   content: string;
   items: SummaryItem[];
   sourceQuestions: SummarySourceQuestion[];

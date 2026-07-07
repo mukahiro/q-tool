@@ -36,12 +36,12 @@ export function SummaryList({ summaries }: SummaryListProps) {
         >
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-700">
+              <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                セクション: {summary.sectionName}
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
                 セクションID: {summary.sectionId}
               </p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-950">
-                AI要約
-              </h2>
             </div>
             <p className="text-sm text-slate-500">
               {dateFormatter.format(new Date(summary.createdAt))}
