@@ -4,12 +4,16 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { SectionSummaryModal } from "@/features/question/components/SectionSummaryModal";
 import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
+import { SummaryResultContent } from "@/features/summary/components/SummaryResultContent";
+import type {
+  SummaryItem,
+  SummarySourceQuestion,
+} from "@/features/summary/types";
 import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { endRoom } from "../actions";
 import type { RoomDisplay, RoomSectionDisplay } from "../types";
-import { RoomSectionCreateModal } from "./RoomSectionCreateModal";
+import { RoomSectionCreateForm } from "./RoomSectionCreateForm";
 
 type NextStepLinkProps = {
   href: string;
@@ -38,8 +42,18 @@ type SectionListProps = {
   activeSectionId: string | null;
   bodyText: string;
   isFullscreen: boolean;
-  emptyAction: ReactNode;
 };
+
+type EndedSectionSummary = {
+  summaryId: string;
+  sectionId: string;
+  content: string;
+  items: SummaryItem[];
+  sourceQuestions: SummarySourceQuestion[];
+};
+
+const getEndedSectionSummaryStorageKey = (roomId: string) =>
+  `q-tool:ended-section-summary:${roomId}`;
 
 /**
  * ルーム詳細表示コンポーネント
@@ -50,6 +64,11 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const [roomState, setRoomState] = useState(room);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [isSectionFullscreen, setIsSectionFullscreen] = useState(false);
+  const [endedSectionSummary, setEndedSectionSummary] =
+    useState<EndedSectionSummary | null>(() =>
+      loadEndedSectionSummary(room.id),
+    );
+  const sectionNameInputRef = useRef<HTMLInputElement>(null);
   const [isRoomEnding, startRoomEndTransition] = useTransition();
 
   // ルーム状態を日本語で表示
@@ -150,6 +169,58 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
     }));
     setFeedbackMessage("セクションを作成しました。");
     router.refresh();
+  };
+
+  const handleSectionEnded = ({
+    summaryId,
+    sectionId,
+    summaryContent,
+    summaryItems,
+    sourceQuestions,
+  }: {
+    summaryId: string;
+    sectionId: string;
+    summaryContent?: string;
+    summaryItems?: SummaryItem[];
+    sourceQuestions?: SummarySourceQuestion[];
+  }) => {
+    const now = new Date();
+    const nextSummary: EndedSectionSummary = {
+      summaryId,
+      sectionId,
+      content: summaryContent ?? "セクションを終了し、AI要約を保存しました。",
+      items: summaryItems ?? [],
+      sourceQuestions: sourceQuestions ?? [],
+    };
+
+    saveEndedSectionSummary(roomState.id, nextSummary);
+    setEndedSectionSummary(nextSummary);
+    setRoomState((currentRoom) => ({
+      ...currentRoom,
+      active_section_id: null,
+      active_section_name: null,
+      sections: currentRoom.sections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              is_completed: true,
+              completed_at: now,
+              summary_id: summaryId,
+            }
+          : section,
+      ),
+      updated_at: now,
+    }));
+    setFeedbackMessage("セクションを終了しました。");
+  };
+
+  const handleCloseSummaryModal = () => {
+    clearEndedSectionSummary(roomState.id);
+    setEndedSectionSummary(null);
+
+    window.requestAnimationFrame(() => {
+      sectionNameInputRef.current?.focus();
+    });
   };
 
   return (
@@ -282,37 +353,27 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
                 <Maximize2 aria-hidden="true" className="size-5" />
               )}
             </button>
+          </div>
+        </div>
 
-            {isSectionActive ? (
+        <div className="mt-5">
+          {isSectionActive ? (
+            <div className="w-full">
               <EndSectionForm
                 roomId={roomState.id}
                 hasActiveSection={Boolean(roomState.active_section_id)}
-                onEnded={() => {
-                  const now = new Date();
-
-                  setRoomState((currentRoom) => ({
-                    ...currentRoom,
-                    active_section_id: null,
-                    active_section_name: null,
-                    sections: currentRoom.sections.map((section) =>
-                      section.id === currentRoom.active_section_id
-                        ? { ...section, is_completed: true, completed_at: now }
-                        : section,
-                    ),
-                    updated_at: now,
-                  }));
-                  setFeedbackMessage("セクションを終了しました。");
-                }}
+                layout="inline"
+                onEnded={handleSectionEnded}
               />
-            ) : (
-              <RoomSectionCreateModal
-                roomId={roomState.id}
-                disabled={!roomState.is_active}
-                label="次のセクションを作成"
-                onCreated={handleSectionCreated}
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <RoomSectionCreateForm
+              roomId={roomState.id}
+              disabled={!roomState.is_active}
+              inputRef={sectionNameInputRef}
+              onCreated={handleSectionCreated}
+            />
+          )}
         </div>
 
         <SectionList
@@ -321,17 +382,67 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           activeSectionId={roomState.active_section_id}
           bodyText={bodyText}
           isFullscreen={isSectionFullscreen}
-          emptyAction={
-            <RoomSectionCreateModal
-              roomId={roomState.id}
-              disabled={!roomState.is_active}
-              label="最初のセクションを作成"
-              variant="primary"
-              onCreated={handleSectionCreated}
-            />
-          }
         />
       </section>
+
+      {endedSectionSummary ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 px-4 py-6"
+          role="presentation"
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="summary-result-title"
+            className="max-h-full w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
+          >
+            <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-emerald-700">
+                  セクション終了
+                </p>
+                <h3
+                  id="summary-result-title"
+                  className="mt-1 text-xl font-semibold text-slate-950"
+                >
+                  AI要約結果
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseSummaryModal}
+                className="inline-flex items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                閉じる
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <SummaryResultContent
+                content={endedSectionSummary.content}
+                items={endedSectionSummary.items}
+                sourceQuestions={endedSectionSummary.sourceQuestions}
+              />
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Link
+                href={`/rooms/${roomState.id}/summaries`}
+                className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                要約一覧を開く
+              </Link>
+              <button
+                type="button"
+                onClick={handleCloseSummaryModal}
+                className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                ルーム詳細に戻る
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
     </div>
   );
@@ -414,7 +525,6 @@ function SectionList({
   activeSectionId,
   bodyText,
   isFullscreen,
-  emptyAction,
 }: SectionListProps) {
   if (sections.length === 0) {
     return (
@@ -429,7 +539,6 @@ function SectionList({
           <p className={`mt-2 text-sm leading-6 ${bodyText}`}>
             セクションを作成すると、授業の区切りごとに質問を集めて要約できます。
           </p>
-          <div className="mt-5">{emptyAction}</div>
         </div>
       </div>
     );
@@ -511,4 +620,78 @@ function formatSectionDate(date: Date) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function saveEndedSectionSummary(
+  roomId: string,
+  summary: EndedSectionSummary,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(
+      getEndedSectionSummaryStorageKey(roomId),
+      JSON.stringify(summary),
+    );
+  } catch (error) {
+    console.error("終了したセクション要約の一時保存に失敗しました", error);
+  }
+}
+
+function loadEndedSectionSummary(roomId: string) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const savedSummary = window.sessionStorage.getItem(
+      getEndedSectionSummaryStorageKey(roomId),
+    );
+
+    if (!savedSummary) {
+      return null;
+    }
+
+    return parseEndedSectionSummary(JSON.parse(savedSummary));
+  } catch (error) {
+    console.error("終了したセクション要約の復元に失敗しました", error);
+    clearEndedSectionSummary(roomId);
+    return null;
+  }
+}
+
+function clearEndedSectionSummary(roomId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(getEndedSectionSummaryStorageKey(roomId));
+}
+
+function parseEndedSectionSummary(value: unknown): EndedSectionSummary | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const summary = value as Partial<EndedSectionSummary>;
+
+  if (
+    typeof summary.summaryId !== "string" ||
+    typeof summary.sectionId !== "string" ||
+    typeof summary.content !== "string" ||
+    !Array.isArray(summary.items) ||
+    !Array.isArray(summary.sourceQuestions)
+  ) {
+    return null;
+  }
+
+  return {
+    summaryId: summary.summaryId,
+    sectionId: summary.sectionId,
+    content: summary.content,
+    items: summary.items,
+    sourceQuestions: summary.sourceQuestions,
+  };
 }
