@@ -55,6 +55,9 @@ type EndedSectionSummary = {
 const getEndedSectionSummaryStorageKey = (roomId: string) =>
   `q-tool:ended-section-summary:${roomId}`;
 
+const getSectionFullscreenStorageKey = (roomId: string) =>
+  `q-tool:section-fullscreen:${roomId}`;
+
 /**
  * ルーム詳細表示コンポーネント
  * 教師が特定ルームの情報を確認する画面
@@ -63,7 +66,9 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const router = useRouter();
   const [roomState, setRoomState] = useState(room);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-  const [isSectionFullscreen, setIsSectionFullscreen] = useState(false);
+  const [isSectionFullscreen, setIsSectionFullscreen] = useState(() =>
+    loadSectionFullscreen(room.id),
+  );
   const [endedSectionSummary, setEndedSectionSummary] =
     useState<EndedSectionSummary | null>(() =>
       loadEndedSectionSummary(room.id),
@@ -168,7 +173,15 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
       updated_at: now,
     }));
     setFeedbackMessage("セクションを作成しました。");
-    router.refresh();
+  };
+
+  const handleToggleSectionFullscreen = () => {
+    setIsSectionFullscreen((current) => {
+      const nextValue = !current;
+
+      saveSectionFullscreen(roomState.id, nextValue);
+      return nextValue;
+    });
   };
 
   const handleSectionEnded = ({
@@ -334,7 +347,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-end">
             <button
               type="button"
-              onClick={() => setIsSectionFullscreen((current) => !current)}
+              onClick={handleToggleSectionFullscreen}
               aria-label={
                 isSectionFullscreen
                   ? "セクションエリアを通常表示に戻す"
@@ -694,4 +707,30 @@ function parseEndedSectionSummary(value: unknown): EndedSectionSummary | null {
     items: summary.items,
     sourceQuestions: summary.sourceQuestions,
   };
+}
+
+function saveSectionFullscreen(roomId: string, isFullscreen: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(
+      getSectionFullscreenStorageKey(roomId),
+      isFullscreen ? "true" : "false",
+    );
+  } catch (error) {
+    console.error("セクションエリア表示状態の保存に失敗しました", error);
+  }
+}
+
+function loadSectionFullscreen(roomId: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.sessionStorage.getItem(getSectionFullscreenStorageKey(roomId)) ===
+    "true"
+  );
 }
