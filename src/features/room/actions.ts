@@ -2,6 +2,7 @@
 
 import type { DecodedIdToken } from "firebase-admin/auth";
 import type { DocumentData } from "firebase-admin/firestore";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAuthToken } from "@/features/auth/actions";
 import { getVerifiedTeacherFromAuthCookie } from "@/features/auth/utils/server";
@@ -155,8 +156,10 @@ export async function createRoom(
     };
   }
 
+  let result: CreateRoomState;
+
   try {
-    return await createRoomWithUniqueInviteCode({
+    result = await createRoomWithUniqueInviteCode({
       idToken: teacher.idToken,
       teacherId: teacher.uid,
       roomName: parsedFields.data.name,
@@ -170,6 +173,12 @@ export async function createRoom(
         "ルームの作成に失敗しました。時間をおいてもう一度お試しください。",
     };
   }
+
+  if (result.ok && result.roomId) {
+    redirect(`/rooms/${result.roomId}`);
+  }
+
+  return result;
 }
 
 async function createRoomWithUniqueInviteCode({

@@ -52,11 +52,11 @@ export function SiteHeaderUserMenu() {
             >
               ルーム作成
             </MenuLink>
-            <MenuLink href="/dashboard/profile" onClick={closeMenu}>
-              プロフィール編集
-            </MenuLink>
             <MenuLink href="/join" onClick={closeMenu}>
               ルーム参加
+            </MenuLink>
+            <MenuLink href="/dashboard/profile" onClick={closeMenu}>
+              プロフィール編集
             </MenuLink>
             <LogoutButton
               wrapperClassName="w-full"
