@@ -59,7 +59,12 @@ export default async function RoomDetailPage({ params }: Props) {
         )}
 
         {/* ルーム詳細 */}
-        {room && <RoomDetail room={room} />}
+        {room && (
+          <RoomDetail
+            key={`${room.updated_at.toISOString()}-${room.sections.length}`}
+            room={room}
+          />
+        )}
       </div>
     </main>
   );

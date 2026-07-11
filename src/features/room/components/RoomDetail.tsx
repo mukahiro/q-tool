@@ -5,7 +5,7 @@ import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { endRoom } from "../actions";
-import type { RoomDisplay } from "../types";
+import type { RoomDisplay, RoomSectionDisplay } from "../types";
 import { RoomSectionCreateModal } from "./RoomSectionCreateModal";
 
 type NextStepLinkProps = {
@@ -13,6 +13,15 @@ type NextStepLinkProps = {
   label: string;
   description: string;
   actionLabel: string;
+};
+
+type SectionListProps = {
+  roomId: string;
+  sections: RoomSectionDisplay[];
+  activeSectionId: string | null;
+  bodyText: string;
+  mutedText: string;
+  titleColor: string;
 };
 
 /**
@@ -37,9 +46,6 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const subtleBadge = roomState.is_active
     ? "bg-slate-100 text-slate-700"
     : "bg-zinc-200 text-zinc-700";
-  const buttonBorder = roomState.is_active
-    ? "border-slate-300 text-slate-700 hover:bg-slate-50"
-    : "border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
   const nextStepHeadingColor = roomState.is_active ? "text-slate-950" : "text-zinc-50";
   const nextStepMutedText = roomState.is_active ? "text-slate-600" : "text-zinc-200";
   const isSectionActive = Boolean(roomState.active_section_id);
@@ -76,6 +82,11 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           is_active: false,
           active_section_id: null,
           active_section_name: null,
+          sections: currentRoom.sections.map((section) =>
+            section.id === currentRoom.active_section_id
+              ? { ...section, is_completed: true, completed_at: now }
+              : section,
+          ),
           updated_at: now,
           closed_at: now,
         }));
@@ -98,13 +109,19 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
             <p className={`mt-2 text-sm font-semibold ${statusColor}`}>
               {statusText}
             </p>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
               {roomState.creator_name ? (
                 <div>
                   <dt className={`font-medium ${mutedText}`}>作成ユーザー</dt>
                   <dd className={`mt-1 font-semibold ${bodyText}`}>{roomState.creator_name}</dd>
                 </div>
               ) : null}
+              <div>
+                <dt className={`font-medium ${mutedText}`}>質問数</dt>
+                <dd className={`mt-1 font-semibold ${bodyText}`}>
+                  {roomState.question_count}件
+                </dd>
+              </div>
               <div>
                 <dt className={`font-medium ${mutedText}`}>作成日時</dt>
                 <dd className={bodyText}>{formatDate(roomState.created_at)}</dd>
@@ -136,64 +153,85 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
         </div>
       </section>
 
-      {/* 統計情報 */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* 質問数 */}
-        <div className={`rounded-lg border p-4 shadow-sm ${cardBackground} ${cardBorder}`}>
-          <p className={`text-sm font-semibold ${mutedText}`}>質問数</p>
-          <p className={`mt-2 text-3xl font-bold ${titleColor}`}>
-            {roomState.question_count}
-          </p>
-        </div>
-
-        {/* 現在のセクション */}
-        <div className={`rounded-lg border p-4 shadow-sm ${cardBackground} ${cardBorder}`}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className={`text-sm font-semibold ${mutedText}`}>現在のセクション</p>
-              <p className={`mt-2 text-lg font-semibold ${titleColor}`}>
-                {roomState.active_section_name ?? "セクションが開始されていません"}
-              </p>
-              <p className={`mt-2 text-sm ${bodyText}`}>
-                {isSectionActive
-                  ? "セクション終了で要約と回答の時間に進みます。"
-                  : "次のセクションを作成して授業を再開できます。"}
-              </p>
-            </div>
-
-            {isSectionActive ? (
-              <EndSectionForm
-                roomId={roomState.id}
-                hasActiveSection={Boolean(roomState.active_section_id)}
-                onEnded={() => {
-                  setRoomState((currentRoom) => ({
-                    ...currentRoom,
-                    active_section_id: null,
-                    active_section_name: null,
-                    updated_at: new Date(),
-                  }));
-                  setFeedbackMessage("セクションを終了しました。");
-                }}
-              />
-            ) : (
-              <RoomSectionCreateModal
-                roomId={roomState.id}
-                disabled={!roomState.is_active}
-                label="次のセクションを作成"
-                onCreated={({ sectionId, sectionName }) => {
-                  setRoomState((currentRoom) => ({
-                    ...currentRoom,
-                    active_section_id: sectionId,
-                    active_section_name: sectionName,
-                    updated_at: new Date(),
-                  }));
-                  setFeedbackMessage("セクションを作成しました。");
-                  router.refresh();
-                }}
-              />
-            )}
+      {/* セクション */}
+      <section className={`rounded-lg border p-5 shadow-sm ${cardBackground} ${cardBorder}`}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className={`text-sm font-semibold ${mutedText}`}>セクション</h2>
+            <p className={`mt-2 text-lg font-semibold ${titleColor}`}>
+              {roomState.active_section_name ?? "進行中のセクションはありません"}
+            </p>
+            <p className={`mt-2 text-sm ${bodyText}`}>
+              {isSectionActive
+                ? "セクション終了で要約と回答の時間に進みます。"
+                : "次のセクションを作成して授業を再開できます。"}
+            </p>
           </div>
+
+          {isSectionActive ? (
+            <EndSectionForm
+              roomId={roomState.id}
+              hasActiveSection={Boolean(roomState.active_section_id)}
+              onEnded={() => {
+                const now = new Date();
+
+                setRoomState((currentRoom) => ({
+                  ...currentRoom,
+                  active_section_id: null,
+                  active_section_name: null,
+                  sections: currentRoom.sections.map((section) =>
+                    section.id === currentRoom.active_section_id
+                      ? { ...section, is_completed: true, completed_at: now }
+                      : section,
+                  ),
+                  updated_at: now,
+                }));
+                setFeedbackMessage("セクションを終了しました。");
+              }}
+            />
+          ) : (
+            <RoomSectionCreateModal
+              roomId={roomState.id}
+              disabled={!roomState.is_active}
+              label="次のセクションを作成"
+              onCreated={({ sectionId, sectionName }) => {
+                const now = new Date();
+
+                setRoomState((currentRoom) => ({
+                  ...currentRoom,
+                  active_section_id: sectionId,
+                  active_section_name: sectionName,
+                  sections: [
+                    ...currentRoom.sections,
+                    {
+                      id: sectionId,
+                      name: sectionName,
+                      order: currentRoom.sections.length + 1,
+                      is_completed: false,
+                      question_count: 0,
+                      reaction_count: 0,
+                      summary_id: null,
+                      created_at: now,
+                      completed_at: null,
+                    },
+                  ],
+                  updated_at: now,
+                }));
+                setFeedbackMessage("セクションを作成しました。");
+                router.refresh();
+              }}
+            />
+          )}
         </div>
+
+        <SectionList
+          roomId={roomState.id}
+          sections={roomState.sections}
+          activeSectionId={roomState.active_section_id}
+          bodyText={bodyText}
+          mutedText={mutedText}
+          titleColor={titleColor}
+        />
       </section>
 
       {/* 次に使う操作 */}
@@ -276,4 +314,95 @@ function NextStepLink({ href, label, description, actionLabel }: NextStepLinkPro
       </span>
     </Link>
   );
+}
+
+function SectionList({
+  roomId,
+  sections,
+  activeSectionId,
+  bodyText,
+  mutedText,
+  titleColor,
+}: SectionListProps) {
+  if (sections.length === 0) {
+    return (
+      <p className={`mt-5 flex h-64 items-center justify-center rounded-md border border-dashed border-slate-300 px-4 py-3 text-sm ${bodyText}`}>
+        まだセクションは作成されていません。
+      </p>
+    );
+  }
+
+  const sortedSections = [...sections].sort((a, b) => {
+    if (b.order !== a.order) {
+      return b.order - a.order;
+    }
+
+    return b.created_at.getTime() - a.created_at.getTime();
+  });
+
+  return (
+    <div className="mt-5 h-96 overflow-y-auto rounded-md border border-slate-200 bg-white/70">
+      <ol className="divide-y divide-slate-200">
+        {sortedSections.map((section) => {
+          const isCurrent = section.id === activeSectionId;
+          const statusText = isCurrent
+            ? "進行中"
+            : section.is_completed
+              ? "完了"
+              : "未完了";
+          const statusClass = isCurrent
+            ? "bg-emerald-100 text-emerald-700"
+            : section.is_completed
+              ? "bg-slate-100 text-slate-700"
+              : "bg-amber-100 text-amber-700";
+
+          return (
+            <li key={section.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`text-sm font-semibold ${titleColor}`}>
+                    {section.order > 0 ? `セクション${section.order}` : "セクション"}
+                  </span>
+                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass}`}>
+                    {statusText}
+                  </span>
+                </div>
+                <p className={`mt-1 text-base font-semibold ${titleColor}`}>
+                  {section.name}
+                </p>
+                <p className={`mt-1 text-sm ${mutedText}`}>
+                  作成: {formatSectionDate(section.created_at)}
+                  {section.completed_at
+                    ? ` / 終了: ${formatSectionDate(section.completed_at)}`
+                    : ""}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:items-end">
+                <div className={`text-sm font-semibold ${bodyText}`}>
+                  質問 {section.question_count}件
+                </div>
+                {section.summary_id ? (
+                  <Link
+                    href={`/rooms/${roomId}/summaries#${section.summary_id}`}
+                    className="inline-flex min-h-9 items-center justify-center rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                  >
+                    要約を表示
+                  </Link>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+function formatSectionDate(date: Date) {
+  return date.toLocaleString("ja-JP", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

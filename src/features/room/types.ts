@@ -76,6 +76,18 @@ export type InviteCodeDocument = {
 /**
  * クライアント側で表示用に加工した Room 型
  */
+export type RoomSectionDisplay = {
+  id: string;
+  name: string;
+  order: number;
+  is_completed: boolean;
+  question_count: number;
+  reaction_count: number;
+  summary_id: string | null;
+  created_at: Date;
+  completed_at: Date | null;
+};
+
 export type RoomDisplay = {
   id: string;
   name: string;
@@ -85,6 +97,7 @@ export type RoomDisplay = {
   question_count: number;
   active_section_id: string | null;
   active_section_name: string | null;
+  sections: RoomSectionDisplay[];
   created_at: Date;
   updated_at: Date;
   closed_at: Date | null;

@@ -15,10 +15,11 @@ import type {
   InviteCodeDocument,
   RoomDisplay,
   RoomDocument,
+  RoomSectionDisplay,
   SectionDocument,
 } from "./types";
 import { ROOM_ERROR_MESSAGES } from "./utils/errors";
-import { fetchRoom, fetchSection, timestampToDate } from "./utils/firebase";
+import { fetchRoom, timestampToDate } from "./utils/firebase";
 import {
   createRoomDocuments,
   type CreateRoomDocumentsResult,
@@ -263,17 +264,13 @@ export async function getRoomDetail(
       };
     }
 
-    const creatorName = await getTeacherUsername(room.teacher_id);
-    let activeSectionName: string | null = null;
-
-    if (room.active_section_id) {
-      const { data: section } = await fetchSection(
-        roomId,
-        room.active_section_id,
-      );
-
-      activeSectionName = section?.name ?? null;
-    }
+    const [creatorName, sections] = await Promise.all([
+      getTeacherUsername(room.teacher_id),
+      getRoomSections(roomId),
+    ]);
+    const activeSectionName =
+      sections.find((section) => section.id === room.active_section_id)?.name ??
+      null;
 
     const roomDisplay: RoomDisplay = {
       id: room.id,
@@ -284,6 +281,7 @@ export async function getRoomDetail(
       question_count: room.question_count,
       active_section_id: room.active_section_id,
       active_section_name: activeSectionName,
+      sections,
       created_at: timestampToDate(room.created_at) || new Date(),
       updated_at: timestampToDate(room.updated_at) || new Date(),
       closed_at: timestampToDate(room.closed_at),
@@ -594,8 +592,61 @@ async function getTeacherUsername(teacherId: string) {
     : null;
 }
 
+async function getRoomSections(roomId: string): Promise<RoomSectionDisplay[]> {
+  const sectionsSnapshot = await getFirebaseAdminDb()
+    .collection("rooms")
+    .doc(roomId)
+    .collection("sections")
+    .orderBy("order", "asc")
+    .get();
+
+  return sectionsSnapshot.docs.map((sectionDoc) =>
+    toRoomSectionDisplay(sectionDoc.id, sectionDoc.data()),
+  );
+}
+
+function toRoomSectionDisplay(
+  id: string,
+  data: DocumentData,
+): RoomSectionDisplay {
+  return {
+    id,
+    name: readString(data.name, "名称未設定のセクション"),
+    order: readNumber(data.order),
+    is_completed: Boolean(data.is_completed),
+    question_count: readNumber(data.question_count),
+    reaction_count: readNumber(data.reaction_count),
+    summary_id: readNullableString(data.summary_id),
+    created_at: toDateValue(data.created_at) ?? new Date(0),
+    completed_at: toDateValue(data.completed_at),
+  };
+}
+
 function readNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function readNullableString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : null;
+}
+
+function toDateValue(value: unknown) {
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  ) {
+    return value.toDate();
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  return null;
 }
 
 function toIsoString(value: unknown) {
