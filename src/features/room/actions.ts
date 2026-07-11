@@ -263,6 +263,7 @@ export async function getRoomDetail(
       };
     }
 
+    const creatorName = await getTeacherUsername(room.teacher_id);
     let activeSectionName: string | null = null;
 
     if (room.active_section_id) {
@@ -277,6 +278,7 @@ export async function getRoomDetail(
     const roomDisplay: RoomDisplay = {
       id: room.id,
       name: room.name,
+      creator_name: creatorName,
       invite_code: room.invite_code,
       is_active: room.is_active,
       question_count: room.question_count,
@@ -567,6 +569,29 @@ function readString(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim().length > 0
     ? value
     : fallback;
+}
+
+async function getTeacherUsername(teacherId: string) {
+  let teacherSnapshot;
+
+  try {
+    teacherSnapshot = await getFirebaseAdminDb()
+      .collection("teachers")
+      .doc(teacherId)
+      .get();
+  } catch (error) {
+    console.error("作成ユーザー名の取得に失敗しました", error);
+    return null;
+  }
+
+  if (!teacherSnapshot.exists) {
+    return null;
+  }
+
+  const username = teacherSnapshot.data()?.username;
+  return typeof username === "string" && username.trim().length > 0
+    ? username.trim()
+    : null;
 }
 
 function readNumber(value: unknown) {

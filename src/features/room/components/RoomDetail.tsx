@@ -8,6 +8,13 @@ import { endRoom } from "../actions";
 import type { RoomDisplay } from "../types";
 import { RoomSectionCreateModal } from "./RoomSectionCreateModal";
 
+type NextStepLinkProps = {
+  href: string;
+  label: string;
+  description: string;
+  actionLabel: string;
+};
+
 /**
  * ルーム詳細表示コンポーネント
  * 教師が特定ルームの情報を確認する画面
@@ -33,6 +40,8 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const buttonBorder = roomState.is_active
     ? "border-slate-300 text-slate-700 hover:bg-slate-50"
     : "border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50";
+  const nextStepHeadingColor = roomState.is_active ? "text-slate-950" : "text-zinc-50";
+  const nextStepMutedText = roomState.is_active ? "text-slate-600" : "text-zinc-200";
   const isSectionActive = Boolean(roomState.active_section_id);
 
   // 日時をフォーマット
@@ -89,6 +98,28 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
             <p className={`mt-2 text-sm font-semibold ${statusColor}`}>
               {statusText}
             </p>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+              {roomState.creator_name ? (
+                <div>
+                  <dt className={`font-medium ${mutedText}`}>作成ユーザー</dt>
+                  <dd className={`mt-1 font-semibold ${bodyText}`}>{roomState.creator_name}</dd>
+                </div>
+              ) : null}
+              <div>
+                <dt className={`font-medium ${mutedText}`}>作成日時</dt>
+                <dd className={bodyText}>{formatDate(roomState.created_at)}</dd>
+              </div>
+              <div>
+                <dt className={`font-medium ${mutedText}`}>最終更新</dt>
+                <dd className={bodyText}>{formatDate(roomState.updated_at)}</dd>
+              </div>
+              <div>
+                <dt className={`font-medium ${mutedText}`}>終了日時</dt>
+                <dd className={bodyText}>
+                  {roomState.closed_at ? formatDate(roomState.closed_at) : "未終了"}
+                </dd>
+              </div>
+            </dl>
             {feedbackMessage ? (
               <p
                 className={`mt-2 text-sm ${
@@ -165,79 +196,84 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
         </div>
       </section>
 
-      {/* 時刻情報 */}
-      <section className={`rounded-lg border p-6 shadow-sm ${cardBackground} ${cardBorder}`}>
-        <h2 className={`text-sm font-semibold ${mutedText}`}>ルーム情報</h2>
-        <dl className="mt-4 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className={`font-medium ${mutedText}`}>作成日時</dt>
-            <dd className={bodyText}>{formatDate(roomState.created_at)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className={`font-medium ${mutedText}`}>最終更新</dt>
-            <dd className={bodyText}>{formatDate(roomState.updated_at)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className={`font-medium ${mutedText}`}>終了日時</dt>
-            <dd className={bodyText}>
-              {roomState.closed_at ? formatDate(roomState.closed_at) : "未終了"}
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      {/* アクションリンク */}
-      <section className={`space-y-3 rounded-lg border p-6 shadow-sm ${cardBackground} ${cardBorder}`}>
-        <h2 className={`mb-4 text-sm font-semibold ${mutedText}`}>次のステップ</h2>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          {roomState.is_active ? (
-            <button
-              type="button"
-              onClick={handleEndRoom}
-              disabled={isRoomEnding}
-              className="inline-flex cursor-pointer items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-400"
-            >
-              {isRoomEnding ? "終了処理中..." : "ルーム終了"}
-            </button>
-          ) : (
-            <div className="inline-flex items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
-              終了済みです
-            </div>
-          )}
-
-          {/* 招待画面へのリンク */}
-          <Link
-            href={`/rooms/${roomState.id}/invite`}
-            className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-          >
-            招待QR・PIN表示
-          </Link>
-
-          {/* 要約一覧へのリンク */}
-          <Link
-            href={`/rooms/${roomState.id}/summaries`}
-            className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            AI要約を確認
-          </Link>
-
-          {/* チャットページへのリンク */}
-          <Link
-            href={`/rooms/${roomState.id}/chat`}
-            className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            チャット表示
-          </Link>
-
-          {/* ダッシュボードに戻る */}
-          <Link
-            href="/dashboard"
-            className={`inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold transition ${buttonBorder}`}
-          >
-            ルーム一覧に戻る
-          </Link>
+      {/* 次に使う操作 */}
+      <section className="space-y-4" aria-labelledby="next-steps-heading">
+        <div>
+          <h2 id="next-steps-heading" className={`text-lg font-bold ${nextStepHeadingColor}`}>
+            次のステップ
+          </h2>
+          <p className={`mt-1 text-sm ${nextStepMutedText}`}>
+            授業中によく使う画面と、授業後の確認先をまとめています。
+          </p>
         </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <NextStepLink
+            href={`/rooms/${roomState.id}/invite`}
+            label="学生に共有する"
+            description="QRコードと参加コードを表示して、学生がこのルームに参加できるようにします。"
+            actionLabel="招待画面を開く"
+          />
+          <NextStepLink
+            href={`/rooms/${roomState.id}/chat`}
+            label="質問を確認する"
+            description="学生から届いた質問を授業中に確認します。教室表示にも使いやすい画面です。"
+            actionLabel="チャットを開く"
+          />
+          <NextStepLink
+            href={`/rooms/${roomState.id}/summaries`}
+            label="要約を振り返る"
+            description="終了したセクションの要約と回答案を確認し、授業後の整理に使います。"
+            actionLabel="要約一覧を開く"
+          />
+        </div>
+
+        <div className={`rounded-lg border p-5 shadow-sm ${cardBackground} ${cardBorder}`}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className={`text-sm font-semibold ${titleColor}`}>ルームの受付状態</h3>
+              <p className={`mt-1 text-sm ${bodyText}`}>
+                {roomState.is_active
+                  ? "授業が終わったらルームを終了して、新しい質問の受付を止めます。"
+                  : "このルームは終了済みです。内容の確認と要約の振り返りは引き続き行えます。"}
+              </p>
+            </div>
+
+            {roomState.is_active ? (
+              <button
+                type="button"
+                onClick={handleEndRoom}
+                disabled={isRoomEnding}
+                className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-400"
+              >
+                {isRoomEnding ? "終了処理中..." : "ルームを終了"}
+              </button>
+            ) : (
+              <span className="inline-flex min-h-10 items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
+                終了済み
+              </span>
+            )}
+          </div>
+        </div>
+
       </section>
     </div>
+  );
+}
+
+function NextStepLink({ href, label, description, actionLabel }: NextStepLinkProps) {
+  return (
+    <Link
+      href={href}
+      className="flex h-full flex-col justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      <span>
+        <span className="block text-sm font-semibold text-slate-950">{label}</span>
+        <span className="mt-2 block text-sm leading-6 text-slate-600">{description}</span>
+      </span>
+      <span className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
+        {actionLabel}
+      </span>
+    </Link>
   );
 }

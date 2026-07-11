@@ -79,6 +79,7 @@ export type InviteCodeDocument = {
 export type RoomDisplay = {
   id: string;
   name: string;
+  creator_name: string | null;
   invite_code: string;
   is_active: boolean;
   question_count: number;
