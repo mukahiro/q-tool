@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getAuthToken } from "@/features/auth/actions";
-import { LogoutButton } from "@/features/auth/components/LogoutButton";
 import { getTeacherRooms } from "@/features/room/actions";
 import { TeacherRoomList } from "@/features/room/components/TeacherRoomList";
 
@@ -14,7 +13,6 @@ export default async function RoomsPage() {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
             <h1 className="mt-1 text-3xl font-semibold">ルーム一覧</h1>
           </div>
           {isLoggedIn ? (
@@ -31,7 +29,6 @@ export default async function RoomsPage() {
               >
                 ルームを作成
               </Link>
-              <LogoutButton />
             </div>
           ) : (
             <Link

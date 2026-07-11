@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LogoutButton } from "@/features/auth/components/LogoutButton";
 import type { GetTeacherRoomsResult, TeacherRoomSummary } from "../actions";
 
 type TeacherDashboardProps = {
@@ -24,7 +23,6 @@ export function TeacherDashboard({
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
             <h1 className="mt-1 text-3xl font-semibold">
               教師ダッシュボード
             </h1>
@@ -32,7 +30,6 @@ export function TeacherDashboard({
               {teacherEmail ?? "教師アカウント"} でログイン中
             </p>
           </div>
-          <LogoutButton />
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">

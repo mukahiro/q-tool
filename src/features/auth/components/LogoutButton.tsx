@@ -36,12 +36,12 @@ export function LogoutButton() {
   }
 
   return (
-    <div className="flex flex-col items-start gap-2 sm:items-end">
+    <div className="flex flex-col items-start gap-2">
       <button
         type="button"
         onClick={handleLogout}
         disabled={isLoading}
-        className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-950 hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-400"
+        className="inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
       >
         {isLoading ? "処理中..." : "ログアウト"}
       </button>

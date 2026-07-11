@@ -25,10 +25,7 @@ export function ProfileEditView({ result }: ProfileEditViewProps) {
           >
             ダッシュボードへ戻る
           </Link>
-          <p className="mt-5 text-sm font-semibold text-emerald-700">
-            Q Tool
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold">
+          <h1 className="mt-5 text-3xl font-semibold">
             プロフィール編集
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">

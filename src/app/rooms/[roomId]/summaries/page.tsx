@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LogoutButton } from "@/features/auth/components/LogoutButton";
 import { getRoomSummaries } from "@/features/summary/actions";
 import { SummaryList } from "@/features/summary/components/SummaryList";
 
@@ -24,10 +23,8 @@ export default async function SummariesPage({ params }: Props) {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
             <h1 className="mt-1 text-3xl font-semibold">AI要約一覧</h1>
           </div>
-          <LogoutButton />
         </header>
 
         <div>

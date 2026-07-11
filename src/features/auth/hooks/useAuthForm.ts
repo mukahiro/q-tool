@@ -15,9 +15,9 @@ import { getFirebaseAuth } from "@/lib/firebase/client";
 
 export type AuthMode = "login" | "signup";
 
-export function useAuthForm() {
+export function useAuthForm(initialMode: AuthMode = "login") {
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [currentUser, setCurrentUser] = useState<User | null>(null);

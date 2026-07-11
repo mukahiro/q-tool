@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getRoomDetail } from "@/features/room/actions";
 import { RoomDetail } from "@/features/room/components/RoomDetail";
-import { LogoutButton } from "@/features/auth/components/LogoutButton";
 
 type Props = {
   params: Promise<{ roomId: string }>;
@@ -33,7 +32,6 @@ export default async function RoomDetailPage({ params }: Props) {
         {/* ヘッダー */}
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
             <h1 className="mt-1 text-3xl font-semibold">ルーム詳細</h1>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -43,7 +41,6 @@ export default async function RoomDetailPage({ params }: Props) {
             >
               ルーム一覧に戻る
             </Link>
-            <LogoutButton />
           </div>
         </header>
 

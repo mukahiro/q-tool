@@ -17,7 +17,6 @@ export function RoomCreateView({
         </Link>
 
         <header className="mt-6 border-b border-slate-200 pb-6">
-          <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
           <h1 className="mt-1 text-3xl font-semibold">ルーム新規作成</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
             授業名を入力すると、学生が参加するための招待コードを発行して

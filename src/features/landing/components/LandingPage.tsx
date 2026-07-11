@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { BrandLogo } from "@/components/BrandLogo";
 
 export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
@@ -7,8 +6,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
       <section className="bg-white px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto grid min-h-[82vh] w-full max-w-6xl items-center gap-10 lg:grid-cols-[1fr_0.86fr]">
           <div>
-            <BrandLogo priority className="w-44 sm:w-52" />
-            <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
+            <h1 className="max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
               授業中の質問を集め、教師が答えやすい形に整える
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
