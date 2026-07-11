@@ -17,7 +17,7 @@ const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
 export function ProfileEditView({ result }: ProfileEditViewProps) {
   return (
     <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <header className="border-b border-slate-200 pb-6">
           <Breadcrumbs
             items={[

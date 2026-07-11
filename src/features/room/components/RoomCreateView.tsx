@@ -8,7 +8,7 @@ export function RoomCreateView({
 }) {
   return (
     <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-6xl">
         <header className="border-b border-slate-200 pb-6">
           <Breadcrumbs
             items={[

@@ -1,18 +1,11 @@
 import Link from "next/link";
 import type { GetTeacherRoomsResult, TeacherRoomSummary } from "../actions";
+import { TeacherRoomCard } from "./TeacherRoomList";
 
 type TeacherDashboardProps = {
   teacherEmail: string | null;
   roomResult: GetTeacherRoomsResult;
 };
-
-const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
 export function TeacherDashboard({
   teacherEmail,
@@ -165,55 +158,9 @@ function RecentRooms({ rooms }: { rooms: TeacherRoomSummary[] }) {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {rooms.map((room) => (
-          <article
-            key={room.id}
-            className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-950">
-                  {room.name}
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  {dateFormatter.format(new Date(room.createdAt))}
-                </p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                  room.isActive
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-slate-200 bg-slate-100 text-slate-600"
-                }`}
-              >
-                {room.isActive ? "開講中" : "終了済み"}
-              </span>
-            </div>
-
-            <dl className="mt-5 grid grid-cols-2 gap-3">
-              <RoomMetric label="質問数" value={`${room.questionCount}件`} />
-              <RoomMetric label="招待コード" value={room.inviteCode} />
-            </dl>
-
-            <Link
-              href={`/rooms/${room.id}`}
-              className="mt-5 inline-flex text-sm font-semibold text-emerald-700 underline-offset-4 hover:underline"
-            >
-              詳細を見る
-            </Link>
-          </article>
+          <TeacherRoomCard key={room.id} room={room} />
         ))}
       </div>
     </section>
-  );
-}
-
-function RoomMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md bg-slate-50 p-3">
-      <dt className="text-xs font-medium text-slate-500">{label}</dt>
-      <dd className="mt-1 break-words text-sm font-semibold text-slate-950">
-        {value}
-      </dd>
-    </div>
   );
 }
