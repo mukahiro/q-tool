@@ -25,7 +25,6 @@ export default async function StudentQuestionChatRoute({ params }: Props) {
           <QuestionChatPage initialRoom={result.room} />
         ) : (
           <section className="rounded-lg border border-red-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
             <h1 className="mt-2 text-2xl font-bold text-slate-950">
               ルームを開けませんでした
             </h1>

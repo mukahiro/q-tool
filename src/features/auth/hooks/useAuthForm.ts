@@ -25,7 +25,7 @@ export function useAuthForm(initialMode: AuthMode = "login") {
   const [message, setMessage] = useState<string | null>(null);
 
   const title = useMemo(
-    () => (mode === "login" ? "教師ログイン" : "教師アカウント作成"),
+    () => (mode === "login" ? "教師アカウントログイン" : "教師アカウント作成"),
     [mode],
   );
 
@@ -43,7 +43,7 @@ export function useAuthForm(initialMode: AuthMode = "login") {
       console.error("Firebase initialize failed:", error);
       queueMicrotask(() => {
         setMessage(
-          "Firebase の設定が不足しています。.env.local を確認してください。",
+          "認証の準備が完了していません。管理者に確認してください。",
         );
         setIsLoading(false);
       });

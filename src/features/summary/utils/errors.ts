@@ -6,7 +6,7 @@ export const SUMMARY_ERROR_MESSAGES = {
   SECTION_NOT_FOUND: "現在のセクションが見つかりません。",
   SECTION_ALREADY_COMPLETED: "このセクションはすでに終了しています。",
   GEMINI_API_KEY_MISSING:
-    "Gemini API キーが設定されていません。環境変数 GEMINI_API_KEY を確認してください。",
+    "AI要約の準備が完了していません。管理者に確認してください。",
   SUMMARY_FAILED:
     "セクションの終了と要約に失敗しました。時間をおいてもう一度お試しください。",
   FETCH_FAILED:

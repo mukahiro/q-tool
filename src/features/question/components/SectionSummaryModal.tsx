@@ -74,7 +74,7 @@ export function SectionSummaryModal({
         onClick={handleOpenModal}
         className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-sky-300 bg-sky-50 px-3 text-sm font-semibold text-sky-800 transition hover:bg-sky-100"
       >
-        AI要約を見る
+        AI要約
       </button>
 
       {isOpen ? (

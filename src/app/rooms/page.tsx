@@ -24,12 +24,6 @@ export default async function RoomsPage() {
           {isLoggedIn ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
-              >
-                ダッシュボードへ
-              </Link>
-              <Link
                 href="/rooms/new"
                 className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
@@ -55,7 +49,7 @@ export default async function RoomsPage() {
               ルーム一覧を表示するにはログインしてください
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              教師アカウントでログインすると、Firestore の rooms から自分のルームだけを取得して表示します。
+              教師アカウントでログインすると、作成したルームを一覧で確認できます。
             </p>
           </section>
         ) : null}
@@ -86,11 +80,11 @@ export default async function RoomsPage() {
           <>
             <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-medium text-emerald-700">
-                Firestore から取得
+                作成済みルーム
               </p>
               <h2 className="mt-2 text-2xl font-semibold">ルーム管理</h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                ログイン済み教師の uid をもとに、Firestore の rooms から teacher_id が一致するルームだけを表示しています。
+                これまでに作成したルームの状態、質問数、招待コードを確認できます。
               </p>
             </section>
 

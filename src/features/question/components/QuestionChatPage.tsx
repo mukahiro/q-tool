@@ -260,7 +260,6 @@ export function QuestionChatPage({
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
             <h1 className="mt-1 text-2xl font-bold text-slate-950">
               {room.name}
             </h1>
