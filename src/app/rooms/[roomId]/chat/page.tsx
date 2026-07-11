@@ -19,7 +19,7 @@ export default async function StudentQuestionChatRoute({ params }: Props) {
   const result = await getStudentChatRoom(roomId);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950">
+    <main className="flex-1 bg-slate-50 px-4 py-6 text-slate-950">
       <div className="mx-auto w-full max-w-3xl">
         {result.ok ? (
           <QuestionChatPage initialRoom={result.room} />

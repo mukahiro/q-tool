@@ -18,7 +18,7 @@ export function RoomInviteView({
   qrCodeDataUrl,
 }: RoomInviteViewProps) {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950">
+    <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950">
       <div className="mx-auto w-full max-w-5xl">
         <Link
           href={`/rooms/${roomId}`}

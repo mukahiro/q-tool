@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function ForbiddenPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10 text-slate-950">
+    <main className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-10 text-slate-950">
       <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold text-rose-700">403 Forbidden</p>
 

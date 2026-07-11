@@ -19,7 +19,7 @@ export default async function SummariesPage({ params }: Props) {
   const result = await getRoomSummaries(roomId);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950">
+    <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>

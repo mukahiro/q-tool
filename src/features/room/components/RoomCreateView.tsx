@@ -7,7 +7,7 @@ export function RoomCreateView({
   teacherEmail: string | null;
 }) {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950">
+    <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950">
       <div className="mx-auto w-full max-w-3xl">
         <Link
           href="/dashboard"

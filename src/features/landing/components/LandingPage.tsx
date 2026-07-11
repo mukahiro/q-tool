@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main className="flex-1 bg-slate-50 text-slate-950">
       <section className="bg-white px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto grid min-h-[82vh] w-full max-w-6xl items-center gap-10 lg:grid-cols-[1fr_0.86fr]">
           <div>

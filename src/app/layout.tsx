@@ -18,10 +18,10 @@ export default async function RootLayout({
 
   return (
     <html lang="ja" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-dvh flex-col">
         <AuthStateSync initialHasAuthToken={Boolean(authToken)} />
         <SiteHeader isLoggedIn={Boolean(authToken)} />
-        <div className="flex-1">{children}</div>
+        <div className="flex flex-1 flex-col">{children}</div>
       </body>
     </html>
   );
