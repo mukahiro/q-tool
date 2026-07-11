@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getAuthToken } from "@/features/auth/actions";
-import { LogoutButton } from "@/features/auth/components/LogoutButton";
 import { getTeacherRooms } from "@/features/room/actions";
 import { TeacherRoomList } from "@/features/room/components/TeacherRoomList";
 
@@ -10,30 +10,18 @@ export default async function RoomsPage() {
   const roomResult = isLoggedIn ? await getTeacherRooms() : null;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
+            <Breadcrumbs
+              items={[
+                { label: "ダッシュボード", href: "/dashboard" },
+              ]}
+            />
             <h1 className="mt-1 text-3xl font-semibold">ルーム一覧</h1>
           </div>
-          {isLoggedIn ? (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
-              >
-                ダッシュボードへ
-              </Link>
-              <Link
-                href="/rooms/new"
-                className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                ルームを作成
-              </Link>
-              <LogoutButton />
-            </div>
-          ) : (
+          {isLoggedIn ?? (
             <Link
               href="/login"
               className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
@@ -52,7 +40,7 @@ export default async function RoomsPage() {
               ルーム一覧を表示するにはログインしてください
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              教師アカウントでログインすると、Firestore の rooms から自分のルームだけを取得して表示します。
+              教師アカウントでログインすると、作成したルームを一覧で確認できます。
             </p>
           </section>
         ) : null}
@@ -80,19 +68,7 @@ export default async function RoomsPage() {
         ) : null}
 
         {roomResult?.status === "success" ? (
-          <>
-            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium text-emerald-700">
-                Firestore から取得
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold">ルーム管理</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                ログイン済み教師の uid をもとに、Firestore の rooms から teacher_id が一致するルームだけを表示しています。
-              </p>
-            </section>
-
-            <TeacherRoomList rooms={roomResult.rooms} />
-          </>
+          <TeacherRoomList rooms={roomResult.rooms} />
         ) : null}
       </div>
     </main>

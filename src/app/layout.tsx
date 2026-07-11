@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteHeader } from "@/components/SiteHeader";
 import { getAuthToken } from "@/features/auth/actions";
 import { AuthStateSync } from "@/features/auth/components/AuthStateSync";
 import "./globals.css";
@@ -17,9 +18,10 @@ export default async function RootLayout({
 
   return (
     <html lang="ja" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-dvh flex-col">
         <AuthStateSync initialHasAuthToken={Boolean(authToken)} />
-        {children}
+        <SiteHeader isLoggedIn={Boolean(authToken)} />
+        <div className="flex flex-1 flex-col">{children}</div>
       </body>
     </html>
   );

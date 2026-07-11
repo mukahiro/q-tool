@@ -169,7 +169,6 @@ export async function endActiveSection(
       });
     });
 
-    revalidatePath(`/rooms/${roomId}`);
     revalidatePath(`/rooms/${roomId}/summaries`);
 
     return {

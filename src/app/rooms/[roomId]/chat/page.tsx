@@ -19,13 +19,12 @@ export default async function StudentQuestionChatRoute({ params }: Props) {
   const result = await getStudentChatRoom(roomId);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950">
+    <main className="flex-1 bg-slate-50 px-4 py-6 text-slate-950">
       <div className="mx-auto w-full max-w-3xl">
         {result.ok ? (
           <QuestionChatPage initialRoom={result.room} />
         ) : (
           <section className="rounded-lg border border-red-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
             <h1 className="mt-2 text-2xl font-bold text-slate-950">
               ルームを開けませんでした
             </h1>

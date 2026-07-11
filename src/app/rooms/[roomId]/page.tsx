@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getRoomDetail } from "@/features/room/actions";
 import { RoomDetail } from "@/features/room/components/RoomDetail";
-import { LogoutButton } from "@/features/auth/components/LogoutButton";
 
 type Props = {
   params: Promise<{ roomId: string }>;
@@ -28,22 +28,18 @@ export default async function RoomDetailPage({ params }: Props) {
   const { data: room, error } = await getRoomDetail(roomId);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         {/* ヘッダー */}
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
+            <Breadcrumbs
+              items={[
+                { label: "ダッシュボード", href: "/dashboard" },
+                { label: "ルーム一覧", href: "/rooms" },
+              ]}
+            />
             <h1 className="mt-1 text-3xl font-semibold">ルーム詳細</h1>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link
-              href="/rooms"
-              className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
-            >
-              ルーム一覧に戻る
-            </Link>
-            <LogoutButton />
           </div>
         </header>
 
@@ -63,7 +59,12 @@ export default async function RoomDetailPage({ params }: Props) {
         )}
 
         {/* ルーム詳細 */}
-        {room && <RoomDetail room={room} />}
+        {room && (
+          <RoomDetail
+            key={`${room.updated_at.toISOString()}-${room.sections.length}`}
+            room={room}
+          />
+        )}
       </div>
     </main>
   );

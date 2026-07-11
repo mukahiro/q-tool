@@ -8,6 +8,7 @@ type RoomSectionCreateModalProps = {
   roomId: string;
   disabled?: boolean;
   label?: string;
+  variant?: "default" | "primary";
   onCreated: (result: { sectionId: string; sectionName: string }) => void;
 };
 
@@ -15,6 +16,7 @@ export function RoomSectionCreateModal({
   roomId,
   disabled = false,
   label = "新しいセクションを作成",
+  variant = "default",
   onCreated,
 }: RoomSectionCreateModalProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +50,11 @@ export function RoomSectionCreateModal({
         type="button"
         onClick={() => setIsOpen(true)}
         disabled={disabled}
-        className="inline-flex cursor-pointer items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+        className={
+          variant === "primary"
+            ? "inline-flex min-h-12 cursor-pointer items-center justify-center rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+            : "inline-flex cursor-pointer items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+        }
       >
         {label}
       </button>
@@ -58,9 +64,9 @@ export function RoomSectionCreateModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-section-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-8"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-8 text-left"
         >
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl sm:p-10">
+          <div className="w-full max-w-2xl rounded-md bg-white p-8 text-left shadow-2xl sm:p-10">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-emerald-700">
@@ -96,10 +102,6 @@ export function RoomSectionCreateModal({
                   className="mt-2 w-full rounded-md border border-slate-300 px-4 py-3.5 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-950 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
                 />
               </label>
-
-              <p className="text-sm leading-6 text-slate-600">
-                未入力の場合は、現在のセクション数に 1 を足した名前で作成します。
-              </p>
 
               {state.message ? (
                 <p

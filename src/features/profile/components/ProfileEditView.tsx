@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import type { GetTeacherProfileResult } from "@/features/profile/actions";
 import { ProfileEditForm } from "./ProfileEditForm";
 
@@ -16,18 +16,14 @@ const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
 
 export function ProfileEditView({ result }: ProfileEditViewProps) {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <header className="border-b border-slate-200 pb-6">
-          <Link
-            href="/dashboard"
-            className="text-sm font-semibold text-slate-700 underline-offset-4 hover:underline"
-          >
-            ダッシュボードへ戻る
-          </Link>
-          <p className="mt-5 text-sm font-semibold text-emerald-700">
-            Q Tool
-          </p>
+          <Breadcrumbs
+            items={[
+              { label: "ダッシュボード", href: "/dashboard" },
+            ]}
+          />
           <h1 className="mt-1 text-3xl font-semibold">
             プロフィール編集
           </h1>

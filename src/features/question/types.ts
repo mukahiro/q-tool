@@ -3,6 +3,7 @@ import type { Timestamp } from "firebase/firestore";
 export type StudentChatRoom = {
   id: string;
   name: string;
+  teacherName: string | null;
   isActive: boolean;
   activeSectionId: string | null;
 };

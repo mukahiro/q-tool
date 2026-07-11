@@ -53,12 +53,14 @@ export async function getStudentChatRoom(
     }
 
     const data = roomSnapshot.data();
+    const teacherName = await getTeacherName(readString(data?.teacher_id, ""));
 
     return {
       ok: true,
       room: {
         id: roomSnapshot.id,
         name: readString(data?.name, "名称未設定のルーム"),
+        teacherName,
         isActive: Boolean(data?.is_active),
         activeSectionId: readNullableString(data?.active_section_id),
       },
@@ -72,6 +74,31 @@ export async function getStudentChatRoom(
       room: null,
       message: QUESTION_ERROR_MESSAGES.FETCH_FAILED,
     };
+  }
+}
+
+async function getTeacherName(teacherId: string): Promise<string | null> {
+  if (!teacherId) {
+    return null;
+  }
+
+  try {
+    const teacherSnapshot = await getFirebaseAdminDb()
+      .collection("teachers")
+      .doc(teacherId)
+      .get();
+
+    if (!teacherSnapshot.exists) {
+      return null;
+    }
+
+    const data = teacherSnapshot.data();
+    const username = readString(data?.username, "");
+
+    return username.length > 0 ? username : null;
+  } catch (error) {
+    console.error("教師名の取得に失敗しました", error);
+    return null;
   }
 }
 

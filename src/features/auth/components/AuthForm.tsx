@@ -1,8 +1,13 @@
 "use client";
 
 import { useAuthForm } from "../hooks/useAuthForm";
+import type { AuthMode } from "../hooks/useAuthForm";
 
-export function AuthForm() {
+export function AuthForm({
+  initialMode = "login",
+}: {
+  initialMode?: AuthMode;
+}) {
   const {
     currentUser,
     email,
@@ -16,7 +21,7 @@ export function AuthForm() {
     setMode,
     setPassword,
     title,
-  } = useAuthForm();
+  } = useAuthForm(initialMode);
 
   if (currentUser) {
     return (

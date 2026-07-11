@@ -6,7 +6,15 @@ import { useState } from "react";
 import { clearAuthToken } from "../actions";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
-export function LogoutButton() {
+type LogoutButtonProps = {
+  className?: string;
+  wrapperClassName?: string;
+};
+
+export function LogoutButton({
+  className = "",
+  wrapperClassName = "",
+}: LogoutButtonProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -36,12 +44,12 @@ export function LogoutButton() {
   }
 
   return (
-    <div className="flex flex-col items-start gap-2 sm:items-end">
+    <div className={`flex flex-col items-start gap-2 ${wrapperClassName}`}>
       <button
         type="button"
         onClick={handleLogout}
         disabled={isLoading}
-        className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-950 hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-400"
+        className={`inline-flex min-h-10 items-center justify-center rounded-md border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-400 disabled:bg-slate-400 disabled:text-slate-200 cursor-pointer ${className}`}
       >
         {isLoading ? "処理中..." : "ログアウト"}
       </button>
