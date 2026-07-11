@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CopyInviteUrlButton } from "./CopyInviteUrlButton";
 
 type RoomInviteViewProps = {
@@ -20,15 +20,14 @@ export function RoomInviteView({
   return (
     <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950">
       <div className="mx-auto w-full max-w-5xl">
-        <Link
-          href={`/rooms/${roomId}`}
-          className="text-sm font-medium text-slate-600 underline-offset-4 hover:underline"
-        >
-          ルーム詳細へ戻る
-        </Link>
-
-        <header className="mt-6 border-b border-slate-200 pb-6">
-          <p className="text-sm font-semibold text-emerald-700">Q Tool</p>
+        <header className="border-b border-slate-200 pb-6">
+          <Breadcrumbs
+            items={[
+              { label: "ダッシュボード", href: "/dashboard" },
+              { label: "ルーム一覧", href: "/rooms" },
+              { label: roomName, href: `/rooms/${roomId}` },
+            ]}
+          />
           <h1 className="mt-1 text-3xl font-semibold">学生入室用QR・PIN</h1>
           <p className="mt-3 text-lg font-medium text-slate-800">
             {roomName}

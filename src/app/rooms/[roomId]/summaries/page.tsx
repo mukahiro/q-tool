@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getRoomSummaries } from "@/features/summary/actions";
 import { SummaryList } from "@/features/summary/components/SummaryList";
 
@@ -23,18 +23,16 @@ export default async function SummariesPage({ params }: Props) {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
+            <Breadcrumbs
+              items={[
+                { label: "ダッシュボード", href: "/dashboard" },
+                { label: "ルーム一覧", href: "/rooms" },
+                { label: "ルーム詳細", href: `/rooms/${roomId}` },
+              ]}
+            />
             <h1 className="mt-1 text-3xl font-semibold">AI要約一覧</h1>
           </div>
         </header>
-
-        <div>
-          <Link
-            href={`/rooms/${roomId}`}
-            className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            ルーム詳細に戻る
-          </Link>
-        </div>
 
         {!result.ok ? (
           <p

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getRoomDetail } from "@/features/room/actions";
 import { RoomDetail } from "@/features/room/components/RoomDetail";
 
@@ -32,15 +33,13 @@ export default async function RoomDetailPage({ params }: Props) {
         {/* ヘッダー */}
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
+            <Breadcrumbs
+              items={[
+                { label: "ダッシュボード", href: "/dashboard" },
+                { label: "ルーム一覧", href: "/rooms" },
+              ]}
+            />
             <h1 className="mt-1 text-3xl font-semibold">ルーム詳細</h1>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link
-              href="/rooms"
-              className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
-            >
-              ルーム一覧に戻る
-            </Link>
           </div>
         </header>
 

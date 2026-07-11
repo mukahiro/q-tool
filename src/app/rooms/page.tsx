@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getAuthToken } from "@/features/auth/actions";
 import { getTeacherRooms } from "@/features/room/actions";
 import { TeacherRoomList } from "@/features/room/components/TeacherRoomList";
@@ -13,6 +14,11 @@ export default async function RoomsPage() {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
+            <Breadcrumbs
+              items={[
+                { label: "ダッシュボード", href: "/dashboard" },
+              ]}
+            />
             <h1 className="mt-1 text-3xl font-semibold">ルーム一覧</h1>
           </div>
           {isLoggedIn ? (

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import type { GetTeacherProfileResult } from "@/features/profile/actions";
 import { ProfileEditForm } from "./ProfileEditForm";
 
@@ -19,13 +19,12 @@ export function ProfileEditView({ result }: ProfileEditViewProps) {
     <main className="flex-1 bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <header className="border-b border-slate-200 pb-6">
-          <Link
-            href="/dashboard"
-            className="text-sm font-semibold text-slate-700 underline-offset-4 hover:underline"
-          >
-            ダッシュボードへ戻る
-          </Link>
-          <h1 className="mt-5 text-3xl font-semibold">
+          <Breadcrumbs
+            items={[
+              { label: "ダッシュボード", href: "/dashboard" },
+            ]}
+          />
+          <h1 className="mt-1 text-3xl font-semibold">
             プロフィール編集
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
