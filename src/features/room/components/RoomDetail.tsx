@@ -1,9 +1,11 @@
 "use client";
 
+import { Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { SectionSummaryModal } from "@/features/question/components/SectionSummaryModal";
 import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
 import { endRoom } from "../actions";
 import type { RoomDisplay, RoomSectionDisplay } from "../types";
@@ -35,6 +37,8 @@ type SectionListProps = {
   sections: RoomSectionDisplay[];
   activeSectionId: string | null;
   bodyText: string;
+  isFullscreen: boolean;
+  emptyAction: ReactNode;
 };
 
 /**
@@ -45,6 +49,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const router = useRouter();
   const [roomState, setRoomState] = useState(room);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [isSectionFullscreen, setIsSectionFullscreen] = useState(false);
   const [isRoomEnding, startRoomEndTransition] = useTransition();
 
   // ルーム状態を日本語で表示
@@ -61,6 +66,9 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const metaSurface = roomState.is_active ? "bg-slate-50" : "bg-zinc-200";
   const metaBorder = roomState.is_active ? "border-slate-200" : "border-zinc-300";
   const isSectionActive = Boolean(roomState.active_section_id);
+  const sectionAreaClass = isSectionFullscreen
+    ? `fixed inset-0 z-50 flex flex-col overflow-hidden rounded-none border-0 p-4 shadow-2xl sm:p-6 ${cardBackground}`
+    : `rounded-lg border p-5 shadow-sm ${cardBackground} ${cardBorder}`;
 
   // 日時をフォーマット
   const formatDate = (date: Date) => {
@@ -109,6 +117,39 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
 
       setFeedbackMessage(result.message);
     });
+  };
+
+  const handleSectionCreated = ({
+    sectionId,
+    sectionName,
+  }: {
+    sectionId: string;
+    sectionName: string;
+  }) => {
+    const now = new Date();
+
+    setRoomState((currentRoom) => ({
+      ...currentRoom,
+      active_section_id: sectionId,
+      active_section_name: sectionName,
+      sections: [
+        ...currentRoom.sections,
+        {
+          id: sectionId,
+          name: sectionName,
+          order: currentRoom.sections.length + 1,
+          is_completed: false,
+          question_count: 0,
+          reaction_count: 0,
+          summary_id: null,
+          created_at: now,
+          completed_at: null,
+        },
+      ],
+      updated_at: now,
+    }));
+    setFeedbackMessage("セクションを作成しました。");
+    router.refresh();
   };
 
   return (
@@ -205,7 +246,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
       </section>
 
       {/* セクション */}
-      <section className={`rounded-lg border p-5 shadow-sm ${cardBackground} ${cardBorder}`}>
+      <section className={sectionAreaClass}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className={`text-sm font-semibold ${mutedText}`}>セクション</h2>
@@ -219,60 +260,59 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
             </p>
           </div>
 
-          {isSectionActive ? (
-            <EndSectionForm
-              roomId={roomState.id}
-              hasActiveSection={Boolean(roomState.active_section_id)}
-              onEnded={() => {
-                const now = new Date();
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setIsSectionFullscreen((current) => !current)}
+              aria-label={
+                isSectionFullscreen
+                  ? "セクションエリアを通常表示に戻す"
+                  : "セクションエリアを全画面表示する"
+              }
+              title={
+                isSectionFullscreen
+                  ? "通常表示に戻す"
+                  : "全画面表示"
+              }
+              className="inline-flex size-10 cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50"
+            >
+              {isSectionFullscreen ? (
+                <Minimize2 aria-hidden="true" className="size-5" />
+              ) : (
+                <Maximize2 aria-hidden="true" className="size-5" />
+              )}
+            </button>
 
-                setRoomState((currentRoom) => ({
-                  ...currentRoom,
-                  active_section_id: null,
-                  active_section_name: null,
-                  sections: currentRoom.sections.map((section) =>
-                    section.id === currentRoom.active_section_id
-                      ? { ...section, is_completed: true, completed_at: now }
-                      : section,
-                  ),
-                  updated_at: now,
-                }));
-                setFeedbackMessage("セクションを終了しました。");
-              }}
-            />
-          ) : (
-            <RoomSectionCreateModal
-              roomId={roomState.id}
-              disabled={!roomState.is_active}
-              label="次のセクションを作成"
-              onCreated={({ sectionId, sectionName }) => {
-                const now = new Date();
+            {isSectionActive ? (
+              <EndSectionForm
+                roomId={roomState.id}
+                hasActiveSection={Boolean(roomState.active_section_id)}
+                onEnded={() => {
+                  const now = new Date();
 
-                setRoomState((currentRoom) => ({
-                  ...currentRoom,
-                  active_section_id: sectionId,
-                  active_section_name: sectionName,
-                  sections: [
-                    ...currentRoom.sections,
-                    {
-                      id: sectionId,
-                      name: sectionName,
-                      order: currentRoom.sections.length + 1,
-                      is_completed: false,
-                      question_count: 0,
-                      reaction_count: 0,
-                      summary_id: null,
-                      created_at: now,
-                      completed_at: null,
-                    },
-                  ],
-                  updated_at: now,
-                }));
-                setFeedbackMessage("セクションを作成しました。");
-                router.refresh();
-              }}
-            />
-          )}
+                  setRoomState((currentRoom) => ({
+                    ...currentRoom,
+                    active_section_id: null,
+                    active_section_name: null,
+                    sections: currentRoom.sections.map((section) =>
+                      section.id === currentRoom.active_section_id
+                        ? { ...section, is_completed: true, completed_at: now }
+                        : section,
+                    ),
+                    updated_at: now,
+                  }));
+                  setFeedbackMessage("セクションを終了しました。");
+                }}
+              />
+            ) : (
+              <RoomSectionCreateModal
+                roomId={roomState.id}
+                disabled={!roomState.is_active}
+                label="次のセクションを作成"
+                onCreated={handleSectionCreated}
+              />
+            )}
+          </div>
         </div>
 
         <SectionList
@@ -280,6 +320,16 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           sections={roomState.sections}
           activeSectionId={roomState.active_section_id}
           bodyText={bodyText}
+          isFullscreen={isSectionFullscreen}
+          emptyAction={
+            <RoomSectionCreateModal
+              roomId={roomState.id}
+              disabled={!roomState.is_active}
+              label="最初のセクションを作成"
+              variant="primary"
+              onCreated={handleSectionCreated}
+            />
+          }
         />
       </section>
 
@@ -363,12 +413,25 @@ function SectionList({
   sections,
   activeSectionId,
   bodyText,
+  isFullscreen,
+  emptyAction,
 }: SectionListProps) {
   if (sections.length === 0) {
     return (
-      <p className={`mt-5 flex h-64 items-center justify-center rounded-md border border-dashed border-slate-300 px-4 py-3 text-sm ${bodyText}`}>
-        まだセクションは作成されていません。
-      </p>
+      <div className={`mt-5 flex ${isFullscreen ? "min-h-0 flex-1" : "h-64"} items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center`}>
+        <div className="flex max-w-md flex-col items-center">
+          <p className="text-sm font-semibold text-emerald-700">
+            セクションはまだありません
+          </p>
+          <h3 className="mt-2 text-xl font-bold text-slate-950">
+            最初のセクションを作成しましょう
+          </h3>
+          <p className={`mt-2 text-sm leading-6 ${bodyText}`}>
+            セクションを作成すると、授業の区切りごとに質問を集めて要約できます。
+          </p>
+          <div className="mt-5">{emptyAction}</div>
+        </div>
+      </div>
     );
   }
 
@@ -381,7 +444,7 @@ function SectionList({
   });
 
   return (
-    <div className="mt-5 h-96 overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3">
+    <div className={`mt-5 overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3 ${isFullscreen ? "min-h-0 flex-1" : "h-96"}`}>
       <ol className="space-y-3">
         {sortedSections.map((section) => {
           const isCurrent = section.id === activeSectionId;
