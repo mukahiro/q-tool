@@ -59,9 +59,9 @@ export function EndSectionForm({
         <button
           type="submit"
           disabled={!hasActiveSection || isPending}
-          className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
+          className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto cursor-pointer"
         >
-          {isPending ? "要約を作成中..." : "現在のセクションを終了"}
+          {isPending ? "要約を作成中..." : "セクションを終了して要約"}
         </button>
       </form>
 

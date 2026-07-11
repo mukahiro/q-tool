@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SectionSummaryModal } from "@/features/question/components/SectionSummaryModal";
 import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -15,13 +16,25 @@ type NextStepLinkProps = {
   actionLabel: string;
 };
 
+type NextStepEndRoomProps = {
+  isActive: boolean;
+  isPending: boolean;
+  onEndRoom: () => void;
+};
+
+type RoomMetaItemProps = {
+  label: string;
+  value: string;
+  surfaceClassName: string;
+  borderClassName: string;
+  emphasis?: boolean;
+};
+
 type SectionListProps = {
   roomId: string;
   sections: RoomSectionDisplay[];
   activeSectionId: string | null;
   bodyText: string;
-  mutedText: string;
-  titleColor: string;
 };
 
 /**
@@ -36,7 +49,6 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
 
   // ルーム状態を日本語で表示
   const statusText = roomState.is_active ? "開講中" : "終了";
-  const statusColor = roomState.is_active ? "text-emerald-700" : "text-rose-700";
   const pageBackground = roomState.is_active ? "bg-slate-50" : "bg-zinc-700";
   const cardBackground = roomState.is_active ? "bg-white" : "bg-zinc-300";
   const cardBorder = roomState.is_active ? "border-slate-200" : "border-zinc-300";
@@ -46,8 +58,8 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const subtleBadge = roomState.is_active
     ? "bg-slate-100 text-slate-700"
     : "bg-zinc-200 text-zinc-700";
-  const nextStepHeadingColor = roomState.is_active ? "text-slate-950" : "text-zinc-50";
-  const nextStepMutedText = roomState.is_active ? "text-slate-600" : "text-zinc-200";
+  const metaSurface = roomState.is_active ? "bg-slate-50" : "bg-zinc-200";
+  const metaBorder = roomState.is_active ? "border-slate-200" : "border-zinc-300";
   const isSectionActive = Boolean(roomState.active_section_id);
 
   // 日時をフォーマット
@@ -100,46 +112,32 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   };
 
   return (
-    <div className={`space-y-6 ${pageBackground} rounded-2xl p-4 sm:p-6`}>
+    <div className={`space-y-6 ${pageBackground} rounded-2xl`}>
       {/* ルーム名とステータス */}
       <section className={`rounded-lg border p-6 shadow-sm ${cardBackground} ${cardBorder}`}>
-        <div className="flex flex-col justify-between sm:flex-row sm:items-start">
-          <div>
-            <h1 className={`text-2xl font-bold ${titleColor}`}>{roomState.name}</h1>
-            <p className={`mt-2 text-sm font-semibold ${statusColor}`}>
-              {statusText}
-            </p>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
-              {roomState.creator_name ? (
-                <div>
-                  <dt className={`font-medium ${mutedText}`}>作成ユーザー</dt>
-                  <dd className={`mt-1 font-semibold ${bodyText}`}>{roomState.creator_name}</dd>
-                </div>
-              ) : null}
-              <div>
-                <dt className={`font-medium ${mutedText}`}>質問数</dt>
-                <dd className={`mt-1 font-semibold ${bodyText}`}>
-                  {roomState.question_count}件
-                </dd>
+        <div className="space-y-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h1 className={`text-2xl font-bold ${titleColor}`}>{roomState.name}</h1>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                <span className={`rounded-full px-3 py-1 ${subtleBadge}`}>
+                  招待コード: <span className="font-mono font-bold">{roomState.invite_code}</span>
+                </span>
+                <span
+                  className={
+                    roomState.is_active
+                      ? "rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"
+                      : "rounded-full bg-rose-50 px-3 py-1 text-rose-700"
+                  }
+                >
+                  {statusText}
+                </span>
               </div>
-              <div>
-                <dt className={`font-medium ${mutedText}`}>作成日時</dt>
-                <dd className={bodyText}>{formatDate(roomState.created_at)}</dd>
-              </div>
-              <div>
-                <dt className={`font-medium ${mutedText}`}>最終更新</dt>
-                <dd className={bodyText}>{formatDate(roomState.updated_at)}</dd>
-              </div>
-              <div>
-                <dt className={`font-medium ${mutedText}`}>終了日時</dt>
-                <dd className={bodyText}>
-                  {roomState.closed_at ? formatDate(roomState.closed_at) : "未終了"}
-                </dd>
-              </div>
-            </dl>
+            </div>
+
             {feedbackMessage ? (
               <p
-                className={`mt-2 text-sm ${
+                className={`rounded-md px-3 py-2 text-sm font-semibold ${
                   roomState.is_active ? "text-emerald-700" : "text-amber-300"
                 }`}
               >
@@ -147,10 +145,63 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
               </p>
             ) : null}
           </div>
-          <div className={`mt-4 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium sm:mt-0 ${subtleBadge}`}>
-            招待コード: <span className="ml-2 font-mono font-bold">{roomState.invite_code}</span>
-          </div>
+
+          <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
+            <RoomMetaItem
+              label="質問数"
+              value={`${roomState.question_count}件`}
+              surfaceClassName={metaSurface}
+              borderClassName={metaBorder}
+            />
+            {roomState.creator_name ? (
+              <RoomMetaItem
+                label="作成者"
+                value={roomState.creator_name}
+                surfaceClassName={metaSurface}
+                borderClassName={metaBorder}
+              />
+            ) : null}
+            <RoomMetaItem
+              label="作成日時"
+              value={formatDate(roomState.created_at)}
+              surfaceClassName={metaSurface}
+              borderClassName={metaBorder}
+            />
+            <RoomMetaItem
+              label="最終更新"
+              value={formatDate(roomState.updated_at)}
+              surfaceClassName={metaSurface}
+              borderClassName={metaBorder}
+            />
+            <RoomMetaItem
+              label="終了日時"
+              value={roomState.closed_at ? formatDate(roomState.closed_at) : "未終了"}
+              surfaceClassName={metaSurface}
+              borderClassName={metaBorder}
+            />
+          </dl>
         </div>
+      </section>
+
+      {/* 次に使う操作 */}
+      <section className="grid gap-4 lg:grid-cols-3">
+        <NextStepLink
+          href={`/rooms/${roomState.id}/invite`}
+          label="学生に共有する"
+          description="QRコードと参加コードを表示して、学生がこのルームに参加できるようにします。"
+          actionLabel="招待画面を開く"
+        />
+        <NextStepLink
+          href={`/rooms/${roomState.id}/chat`}
+          label="質問を確認する"
+          description="学生から届いた質問を授業中に確認します。教室表示にも使いやすい画面です。"
+          actionLabel="チャットを開く"
+        />
+        <NextStepEndRoom
+          isActive={roomState.is_active}
+          isPending={isRoomEnding}
+          onEndRoom={handleEndRoom}
+        />
       </section>
 
       {/* セクション */}
@@ -229,72 +280,9 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           sections={roomState.sections}
           activeSectionId={roomState.active_section_id}
           bodyText={bodyText}
-          mutedText={mutedText}
-          titleColor={titleColor}
         />
       </section>
 
-      {/* 次に使う操作 */}
-      <section className="space-y-4" aria-labelledby="next-steps-heading">
-        <div>
-          <h2 id="next-steps-heading" className={`text-lg font-bold ${nextStepHeadingColor}`}>
-            次のステップ
-          </h2>
-          <p className={`mt-1 text-sm ${nextStepMutedText}`}>
-            授業中によく使う画面と、授業後の確認先をまとめています。
-          </p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          <NextStepLink
-            href={`/rooms/${roomState.id}/invite`}
-            label="学生に共有する"
-            description="QRコードと参加コードを表示して、学生がこのルームに参加できるようにします。"
-            actionLabel="招待画面を開く"
-          />
-          <NextStepLink
-            href={`/rooms/${roomState.id}/chat`}
-            label="質問を確認する"
-            description="学生から届いた質問を授業中に確認します。教室表示にも使いやすい画面です。"
-            actionLabel="チャットを開く"
-          />
-          <NextStepLink
-            href={`/rooms/${roomState.id}/summaries`}
-            label="要約を振り返る"
-            description="終了したセクションの要約と回答案を確認し、授業後の整理に使います。"
-            actionLabel="要約一覧を開く"
-          />
-        </div>
-
-        <div className={`rounded-lg border p-5 shadow-sm ${cardBackground} ${cardBorder}`}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className={`text-sm font-semibold ${titleColor}`}>ルームの受付状態</h3>
-              <p className={`mt-1 text-sm ${bodyText}`}>
-                {roomState.is_active
-                  ? "授業が終わったらルームを終了して、新しい質問の受付を止めます。"
-                  : "このルームは終了済みです。内容の確認と要約の振り返りは引き続き行えます。"}
-              </p>
-            </div>
-
-            {roomState.is_active ? (
-              <button
-                type="button"
-                onClick={handleEndRoom}
-                disabled={isRoomEnding}
-                className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-400"
-              >
-                {isRoomEnding ? "終了処理中..." : "ルームを終了"}
-              </button>
-            ) : (
-              <span className="inline-flex min-h-10 items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
-                終了済み
-              </span>
-            )}
-          </div>
-        </div>
-
-      </section>
     </div>
   );
 }
@@ -316,13 +304,65 @@ function NextStepLink({ href, label, description, actionLabel }: NextStepLinkPro
   );
 }
 
+function RoomMetaItem({
+  label,
+  value,
+  surfaceClassName,
+  borderClassName,
+  emphasis = false,
+}: RoomMetaItemProps) {
+  return (
+    <div className={`rounded-md border px-4 py-3 ${surfaceClassName} ${borderClassName}`}>
+      <dt className="text-xs font-semibold text-slate-500">{label}</dt>
+      <dd
+        className={
+          emphasis
+            ? "mt-1 text-2xl font-bold leading-none text-slate-950"
+            : "mt-1 break-words text-sm font-semibold leading-6 text-slate-800"
+        }
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function NextStepEndRoom({
+  isActive,
+  isPending,
+  onEndRoom,
+}: NextStepEndRoomProps) {
+  return (
+    <div className="flex h-full flex-col justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <span>
+        <span className="block text-sm font-semibold text-slate-950">ルーム終了</span>
+        <span className="mt-2 block text-sm leading-6 text-slate-600">
+          授業が終わったら受付を止め、新しい質問の投稿を締め切ります。
+        </span>
+      </span>
+      {isActive ? (
+        <button
+          type="button"
+          onClick={onEndRoom}
+          disabled={isPending}
+          className="mt-4 inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-400"
+        >
+          {isPending ? "終了処理中..." : "ルームを終了"}
+        </button>
+      ) : (
+        <span className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
+          終了済み
+        </span>
+      )}
+    </div>
+  );
+}
+
 function SectionList({
   roomId,
   sections,
   activeSectionId,
   bodyText,
-  mutedText,
-  titleColor,
 }: SectionListProps) {
   if (sections.length === 0) {
     return (
@@ -341,54 +381,57 @@ function SectionList({
   });
 
   return (
-    <div className="mt-5 h-96 overflow-y-auto rounded-md border border-slate-200 bg-white/70">
-      <ol className="divide-y divide-slate-200">
+    <div className="mt-5 h-96 overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3">
+      <ol className="space-y-3">
         {sortedSections.map((section) => {
           const isCurrent = section.id === activeSectionId;
-          const statusText = isCurrent
-            ? "進行中"
-            : section.is_completed
-              ? "完了"
-              : "未完了";
           const statusClass = isCurrent
             ? "bg-emerald-100 text-emerald-700"
             : section.is_completed
               ? "bg-slate-100 text-slate-700"
               : "bg-amber-100 text-amber-700";
+          const statusText = isCurrent
+            ? "現在のセクション"
+            : section.is_completed
+              ? "過去のセクション"
+              : "未完了のセクション";
 
           return (
-            <li key={section.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`text-sm font-semibold ${titleColor}`}>
-                    {section.order > 0 ? `セクション${section.order}` : "セクション"}
-                  </span>
-                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass}`}>
-                    {statusText}
-                  </span>
+            <li
+              key={section.id}
+              className="rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="break-words text-base font-bold text-slate-950">
+                      {section.name}
+                    </h3>
+                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass}`}>
+                      {statusText}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+                    <span>
+                      {section.order > 0 ? `セクション${section.order}` : "セクション"}
+                    </span>
+                    <span>{section.question_count}件の質問</span>
+                    <span>作成: {formatSectionDate(section.created_at)}</span>
+                    {section.completed_at ? (
+                      <span>終了: {formatSectionDate(section.completed_at)}</span>
+                    ) : null}
+                  </div>
                 </div>
-                <p className={`mt-1 text-base font-semibold ${titleColor}`}>
-                  {section.name}
-                </p>
-                <p className={`mt-1 text-sm ${mutedText}`}>
-                  作成: {formatSectionDate(section.created_at)}
-                  {section.completed_at
-                    ? ` / 終了: ${formatSectionDate(section.completed_at)}`
-                    : ""}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 sm:items-end">
-                <div className={`text-sm font-semibold ${bodyText}`}>
-                  質問 {section.question_count}件
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {section.summary_id ? (
+                    <SectionSummaryModal
+                      roomId={roomId}
+                      sectionId={section.id}
+                      sectionName={section.name}
+                    />
+                  ) : null}
                 </div>
-                {section.summary_id ? (
-                  <Link
-                    href={`/rooms/${roomId}/summaries#${section.summary_id}`}
-                    className="inline-flex min-h-9 items-center justify-center rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-                  >
-                    要約を表示
-                  </Link>
-                ) : null}
               </div>
             </li>
           );
