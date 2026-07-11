@@ -20,7 +20,7 @@ export function SiteHeaderUserMenu() {
         aria-expanded={isOpen}
         aria-controls="user-header-menu"
         aria-label={isOpen ? "メニューを閉じる" : "メニューを開く"}
-        className="inline-flex size-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+        className="inline-flex size-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 cursor-pointer"
       >
         {isOpen ? (
           <X aria-hidden="true" className="size-5" />

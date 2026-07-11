@@ -465,6 +465,7 @@ function NextStepLink({ href, label, description, actionLabel }: NextStepLinkPro
   return (
     <Link
       href={href}
+      target="_blank"
       className="flex h-full flex-col justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
     >
       <span>

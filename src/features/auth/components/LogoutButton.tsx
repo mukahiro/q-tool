@@ -49,7 +49,7 @@ export function LogoutButton({
         type="button"
         onClick={handleLogout}
         disabled={isLoading}
-        className={`inline-flex min-h-10 items-center justify-center rounded-md border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-400 disabled:bg-slate-400 disabled:text-slate-200 ${className}`}
+        className={`inline-flex min-h-10 items-center justify-center rounded-md border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-400 disabled:bg-slate-400 disabled:text-slate-200 cursor-pointer ${className}`}
       >
         {isLoading ? "処理中..." : "ログアウト"}
       </button>

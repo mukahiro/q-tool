@@ -264,7 +264,7 @@ export function QuestionChatPage({
               {room.name}
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              担当教師: {room.teacherName ?? "未設定"}
+              作成者: {room.teacherName ?? "未設定"}
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs font-semibold">
