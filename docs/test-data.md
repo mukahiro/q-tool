@@ -454,14 +454,19 @@ rooms/room_math_001/summaries/summary_math_001_basic
   "room_id": "room_math_001",
   "section_id": "section_math_001_basic",
   "content": "平方完成の符号ミスに関する質問がありました。特に、定数項を移動するときと、括弧の外に出す値の扱いで混乱が見られます。",
-  "categories": [
+  "items": [
     {
-      "title": "平方完成の手順",
-      "question_count": 1
-    },
+      "title": "平方完成の符号ミス",
+      "text": "平方完成の符号ミスに関する質問がありました。特に、定数項を移動するときと、括弧の外に出す値の扱いで混乱が見られます。",
+      "source_question_ids": ["question_math_003"]
+    }
+  ],
+  "source_questions": [
     {
-      "title": "符号ミスの防止",
-      "question_count": 1
+      "id": "question_math_003",
+      "sourceLabel": "Q1",
+      "content": "平方完成で符号を間違えやすいです。コツはありますか？",
+      "reactionCount": 1
     }
   ],
   "created_at": "2026-06-23T09:46:00+09:00"

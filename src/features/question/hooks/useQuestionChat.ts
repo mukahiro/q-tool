@@ -255,24 +255,34 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
       ]);
     }
 
-    return Array.from(groupsBySectionId.entries())
-      .map(([groupId, sectionQuestions]) => {
-        const isWholeClassGroup = groupId === WHOLE_CLASS_GROUP_ID;
-        const section = isWholeClassGroup ? null : sectionById.get(groupId);
-        const sectionId = isWholeClassGroup ? null : groupId;
-        const isActiveSection = room.activeSectionId === sectionId;
+    const sectionGroups = sections.map<QuestionSectionGroup>((section) => {
+      const sectionQuestions = groupsBySectionId.get(section.id) ?? [];
+      const isActiveSection = room.activeSectionId === section.id;
 
-        return {
-          sectionId: groupId,
-          sectionName: isWholeClassGroup
-            ? `${WHOLE_CLASS_LABEL}への質問`
-            : (section?.name ?? `セクションID: ${groupId}`),
-          isWholeClass: isWholeClassGroup,
-          isActiveSection,
-          isPastSection: !isActiveSection && !isWholeClassGroup,
-          questions: sectionQuestions,
-        };
-      })
+      return {
+        sectionId: section.id,
+        sectionName: section.name,
+        isWholeClass: false,
+        isActiveSection,
+        isPastSection: !isActiveSection,
+        questions: sectionQuestions,
+      };
+    });
+
+    const wholeClassGroups = groupsBySectionId.has(WHOLE_CLASS_GROUP_ID)
+      ? [
+          {
+            sectionId: WHOLE_CLASS_GROUP_ID,
+            sectionName: `${WHOLE_CLASS_LABEL}への質問`,
+            isWholeClass: true,
+            isActiveSection: false,
+            isPastSection: false,
+            questions: groupsBySectionId.get(WHOLE_CLASS_GROUP_ID) ?? [],
+          },
+        ]
+      : [];
+
+    return [...wholeClassGroups, ...sectionGroups]
       .sort((firstGroup, secondGroup) => {
         if (firstGroup.isActiveSection) return -1;
         if (secondGroup.isActiveSection) return 1;

@@ -22,6 +22,7 @@ import {
   toggleQuestionReaction,
 } from "@/features/question/actions";
 import { useQuestionChat } from "../hooks/useQuestionChat";
+import { SectionSummaryModal } from "./SectionSummaryModal";
 import type {
   QuestionListItem,
   QuestionSectionGroup,
@@ -318,6 +319,7 @@ export function QuestionChatPage({
         {questionGroups.map((group) => (
           <QuestionSection
             key={group.sectionId}
+            roomId={room.id}
             group={group}
             isExpanded={
               !group.isPastSection || expandedPastSectionIds.has(group.sectionId)
@@ -458,12 +460,14 @@ export function QuestionChatPage({
 }
 
 function QuestionSection({
+  roomId,
   group,
   isExpanded,
   isPending,
   onToggle,
   onReaction,
 }: {
+  roomId: string;
   group: QuestionSectionGroup;
   isExpanded: boolean;
   isPending: boolean;
@@ -499,41 +503,55 @@ function QuestionSection({
           </p>
         </div>
 
-        {group.isPastSection && (
-          <button
-            type="button"
-            onClick={() => onToggle(group.sectionId)}
-            aria-expanded={isExpanded}
-            aria-label={
-              isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
-            }
-            title={
-              isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
-            }
-            className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-50"
-          >
-            <ChevronDown
-              aria-hidden="true"
-              className={
-                isExpanded
-                  ? "size-5 rotate-180 transition-transform"
-                  : "size-5 transition-transform"
-              }
+        {group.isPastSection ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <SectionSummaryModal
+              roomId={roomId}
+              sectionId={group.sectionId}
+              sectionName={group.sectionName}
             />
-          </button>
-        )}
+
+            <button
+              type="button"
+              onClick={() => onToggle(group.sectionId)}
+              aria-expanded={isExpanded}
+              aria-label={
+                isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
+              }
+              title={
+                isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
+              }
+              className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-50"
+            >
+              <ChevronDown
+                aria-hidden="true"
+                className={
+                  isExpanded
+                    ? "size-5 rotate-180 transition-transform"
+                    : "size-5 transition-transform"
+                }
+              />
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {isExpanded && (
         <div className="space-y-3 border-t border-slate-100 p-4">
-          {group.questions.map((question) => (
-            <QuestionItem
-              key={question.id}
-              question={question}
-              isPending={isPending}
-              onReaction={onReaction}
-            />
-          ))}
+          {group.questions.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              このセクションにはまだ質問がありません。
+            </p>
+          ) : (
+            group.questions.map((question) => (
+              <QuestionItem
+                key={question.id}
+                question={question}
+                isPending={isPending}
+                onReaction={onReaction}
+              />
+            ))
+          )}
         </div>
       )}
     </section>

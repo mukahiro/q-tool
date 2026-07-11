@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { endRoom, endSection } from "../actions";
+import { endRoom } from "../actions";
 import type { RoomDisplay } from "../types";
 import { RoomSectionCreateModal } from "./RoomSectionCreateModal";
 
@@ -15,7 +16,6 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const router = useRouter();
   const [roomState, setRoomState] = useState(room);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-  const [isSectionEnding, setIsSectionEnding] = useState(false);
   const [isRoomEnding, startRoomEndTransition] = useTransition();
 
   // ルーム状態を日本語で表示
@@ -79,31 +79,6 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
     });
   };
 
-  const handleEndSection = () => {
-    setFeedbackMessage(null);
-    setIsSectionEnding(true);
-
-    void (async () => {
-      const result = await endSection(roomState.id);
-
-      setIsSectionEnding(false);
-
-      if (!result.ok) {
-        setFeedbackMessage(result.message);
-        return;
-      }
-
-      setRoomState((currentRoom) => ({
-        ...currentRoom,
-        active_section_id: null,
-        active_section_name: null,
-        updated_at: new Date(),
-      }));
-      setFeedbackMessage(result.message);
-      router.refresh();
-    })();
-  };
-
   return (
     <div className={`space-y-6 ${pageBackground} rounded-2xl p-4 sm:p-6`}>
       {/* ルーム名とステータス */}
@@ -156,14 +131,19 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
             </div>
 
             {isSectionActive ? (
-              <button
-                type="button"
-                onClick={handleEndSection}
-                disabled={isSectionEnding || !roomState.is_active}
-                className="inline-flex cursor-pointer items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-amber-400"
-              >
-                {isSectionEnding ? "終了処理中..." : "セクション終了"}
-              </button>
+              <EndSectionForm
+                roomId={roomState.id}
+                hasActiveSection={Boolean(roomState.active_section_id)}
+                onEnded={() => {
+                  setRoomState((currentRoom) => ({
+                    ...currentRoom,
+                    active_section_id: null,
+                    active_section_name: null,
+                    updated_at: new Date(),
+                  }));
+                  setFeedbackMessage("セクションを終了しました。");
+                }}
+              />
             ) : (
               <RoomSectionCreateModal
                 roomId={roomState.id}
