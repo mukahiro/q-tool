@@ -263,6 +263,9 @@ export function QuestionChatPage({
             <h1 className="mt-1 text-2xl font-bold text-slate-950">
               {room.name}
             </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              担当教師: {room.teacherName ?? "未設定"}
+            </p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs font-semibold">
             <span
@@ -383,9 +386,6 @@ export function QuestionChatPage({
               </div>
 
               <fieldset className="space-y-2">
-                <legend className="text-sm font-semibold text-slate-700">
-                  質問先
-                </legend>
                 <div className="grid grid-cols-2 gap-2 rounded-md bg-slate-100 p-1">
                   <button
                     type="button"
@@ -419,9 +419,6 @@ export function QuestionChatPage({
               </fieldset>
 
               <label className="block">
-                <span className="text-sm font-semibold text-slate-700">
-                  質問内容
-                </span>
                 <textarea
                   value={content}
                   onChange={(event) => setContent(event.target.value)}

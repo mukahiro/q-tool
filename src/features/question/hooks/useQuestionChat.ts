@@ -73,6 +73,7 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
             typeof data.name === "string" && data.name.trim().length > 0
               ? data.name
               : initialRoom.name,
+          teacherName: initialRoom.teacherName,
           isActive: Boolean(data.is_active),
           activeSectionId:
             typeof data.active_section_id === "string" &&
