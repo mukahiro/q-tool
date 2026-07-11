@@ -30,7 +30,7 @@ export function TeacherRoomList({ rooms }: TeacherRoomListProps) {
           最初の授業ルームを作成しましょう
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
-          ルームを作成すると、ここにルーム名、招待コード、開講状態、質問数、作成日時が表示されます。
+          ルームを作成すると、ここにルーム名、招待コード、セクション数、質問数、作成日時が表示されます。
         </p>
       </section>
     );
@@ -94,10 +94,7 @@ export function TeacherRoomCard({ room }: { room: TeacherRoomSummary }) {
 
       <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <RoomMetric label="質問数" value={`${room.questionCount}件`} />
-        <RoomMetric
-          label="状態"
-          value={room.isActive ? "開講中" : "終了済み"}
-        />
+        <RoomMetric label="セクション数" value={`${room.sectionCount}件`} />
       </dl>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">

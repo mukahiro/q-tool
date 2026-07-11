@@ -34,6 +34,7 @@ export type TeacherRoomSummary = {
   inviteCode: string;
   isActive: boolean;
   questionCount: number;
+  sectionCount: number;
   createdAt: string;
 };
 
@@ -110,12 +111,18 @@ async function getTeacherRoomsByIdToken(
     }
 
     const roomsSnapshot = await roomsQuery.get();
+    const rooms = await Promise.all(
+      roomsSnapshot.docs.map(async (roomDoc) => {
+        const roomData = roomDoc.data();
+        const sectionCount = await getRoomSectionCount(roomDoc.id);
+
+        return toTeacherRoomSummary(roomDoc.id, roomData, sectionCount);
+      }),
+    );
 
     return {
       status: "success",
-      rooms: roomsSnapshot.docs.map((roomDoc) =>
-        toTeacherRoomSummary(roomDoc.id, roomDoc.data()),
-      ),
+      rooms,
     };
   } catch (error) {
     console.error("ルーム一覧の取得に失敗しました", error);
@@ -561,6 +568,7 @@ export async function endRoom(roomId: string): Promise<EndRoomState> {
 function toTeacherRoomSummary(
   id: string,
   data: DocumentData,
+  sectionCount: number,
 ): TeacherRoomSummary {
   return {
     id,
@@ -568,6 +576,7 @@ function toTeacherRoomSummary(
     inviteCode: readString(data.invite_code, "未設定"),
     isActive: Boolean(data.is_active),
     questionCount: readNumber(data.question_count),
+    sectionCount,
     createdAt: toIsoString(data.created_at),
   };
 }
@@ -612,6 +621,16 @@ async function getRoomSections(roomId: string): Promise<RoomSectionDisplay[]> {
   return sectionsSnapshot.docs.map((sectionDoc) =>
     toRoomSectionDisplay(sectionDoc.id, sectionDoc.data()),
   );
+}
+
+async function getRoomSectionCount(roomId: string): Promise<number> {
+  const sectionsSnapshot = await getFirebaseAdminDb()
+    .collection("rooms")
+    .doc(roomId)
+    .collection("sections")
+    .get();
+
+  return sectionsSnapshot.size;
 }
 
 function toRoomSectionDisplay(
