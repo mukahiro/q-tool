@@ -68,19 +68,7 @@ export default async function RoomsPage() {
         ) : null}
 
         {roomResult?.status === "success" ? (
-          <>
-            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium text-emerald-700">
-                作成済みルーム
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold">ルーム管理</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                これまでに作成したルームの状態、質問数、招待コードを確認できます。
-              </p>
-            </section>
-
-            <TeacherRoomList rooms={roomResult.rooms} />
-          </>
+          <TeacherRoomList rooms={roomResult.rooms} />
         ) : null}
       </div>
     </main>

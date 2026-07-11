@@ -38,23 +38,6 @@ export function TeacherRoomList({ rooms }: TeacherRoomListProps) {
 
   return (
     <section aria-labelledby="room-list-heading" className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-emerald-700">
-            作成済みルーム
-          </p>
-          <h2
-            id="room-list-heading"
-            className="mt-1 text-2xl font-semibold text-slate-950"
-          >
-            ルーム一覧
-          </h2>
-        </div>
-        <p className="text-sm text-slate-600">
-          自分が作成したルームだけを表示しています。
-        </p>
-      </div>
-
       <div className="grid gap-4 lg:grid-cols-3">
         {rooms.map((room) => (
           <TeacherRoomCard key={room.id} room={room} />
@@ -92,23 +75,23 @@ export function TeacherRoomCard({ room }: { room: TeacherRoomSummary }) {
         </div>
       </div>
 
-      <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <dl className="mt-5 grid grid-cols-2 gap-3">
         <RoomMetric label="質問数" value={`${room.questionCount}件`} />
         <RoomMetric label="セクション数" value={`${room.sectionCount}件`} />
       </dl>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-        <Link
-          href={`/rooms/${room.id}`}
-          className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-        >
-          詳細
-        </Link>
+      <div className="mt-5 flex flex-row justify-end gap-3">
         <Link
           href={`/rooms/${room.id}/chat`}
           className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
         >
           チャット
+        </Link>
+        <Link
+          href={`/rooms/${room.id}`}
+          className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          詳細
         </Link>
       </div>
     </article>
