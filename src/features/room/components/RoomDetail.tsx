@@ -3,6 +3,7 @@
 import { Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { SectionSummaryModal } from "@/features/question/components/SectionSummaryModal";
+import { endRoomAndSummarizeWholeClass } from "@/features/summary/actions";
 import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
 import { SummaryResultContent } from "@/features/summary/components/SummaryResultContent";
 import type {
@@ -11,7 +12,6 @@ import type {
 } from "@/features/summary/types";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { endRoom } from "../actions";
 import type { RoomDisplay, RoomSectionDisplay } from "../types";
 import { RoomSectionCreateForm } from "./RoomSectionCreateForm";
 
@@ -47,6 +47,8 @@ type SectionListProps = {
 type EndedSectionSummary = {
   summaryId: string;
   sectionId: string;
+  resultLabel: string;
+  resultTitle: string;
   content: string;
   items: SummaryItem[];
   sourceQuestions: SummarySourceQuestion[];
@@ -107,7 +109,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
 
   const handleEndRoom = () => {
     const confirmed = window.confirm(
-      "ルームを終了しますか？終了後は学生が新しい質問を投稿できなくなります。",
+      "ルームを終了しますか？終了後は学生が新しい質問を投稿できなくなり、授業全体への質問をAI要約します。",
     );
 
     if (!confirmed) {
@@ -116,11 +118,24 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
 
     setFeedbackMessage(null);
     startRoomEndTransition(async () => {
-      const result = await endRoom(roomState.id);
+      const result = await endRoomAndSummarizeWholeClass(roomState.id);
 
-      if (result.ok) {
+      if (result.ok && result.summaryId && result.sectionId) {
         const now = new Date();
+        const nextSummary: EndedSectionSummary = {
+          summaryId: result.summaryId,
+          sectionId: result.sectionId,
+          resultLabel: "ルーム終了",
+          resultTitle: "授業全体への質問のAI要約結果",
+          content:
+            result.summaryContent ??
+            "ルームを終了し、授業全体への質問をAI要約しました。",
+          items: result.summaryItems ?? [],
+          sourceQuestions: result.sourceQuestions ?? [],
+        };
 
+        saveEndedSectionSummary(roomState.id, nextSummary);
+        setEndedSectionSummary(nextSummary);
         setRoomState((currentRoom) => ({
           ...currentRoom,
           is_active: false,
@@ -134,12 +149,12 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           updated_at: now,
           closed_at: now,
         }));
-        setFeedbackMessage(result.message);
+        setFeedbackMessage(result.message ?? null);
         router.refresh();
         return;
       }
 
-      setFeedbackMessage(result.message);
+      setFeedbackMessage(result.message ?? null);
     });
   };
 
@@ -201,6 +216,8 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
     const nextSummary: EndedSectionSummary = {
       summaryId,
       sectionId,
+      resultLabel: "セクション終了",
+      resultTitle: "AI要約結果",
       content: summaryContent ?? "セクションを終了し、AI要約を保存しました。",
       items: summaryItems ?? [],
       sourceQuestions: sourceQuestions ?? [],
@@ -412,13 +429,13 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
             <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-emerald-700">
-                  セクション終了
+                  {endedSectionSummary.resultLabel}
                 </p>
                 <h3
                   id="summary-result-title"
                   className="mt-1 text-xl font-semibold text-slate-950"
                 >
-                  AI要約結果
+                  {endedSectionSummary.resultTitle}
                 </h3>
               </div>
               <button
@@ -512,7 +529,7 @@ function NextStepEndRoom({
       <span>
         <span className="block text-sm font-semibold text-slate-950">ルーム終了</span>
         <span className="mt-2 block text-sm leading-6 text-slate-600">
-          授業が終わったら受付を止め、新しい質問の投稿を締め切ります。
+          授業全体への質問をAI要約して、ルームを終了します。終了後は学生が新しい質問を投稿できなくなります。
         </span>
       </span>
       {isActive ? (
@@ -522,7 +539,7 @@ function NextStepEndRoom({
           disabled={isPending}
           className="mt-4 inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-400"
         >
-          {isPending ? "終了処理中..." : "ルームを終了"}
+          {isPending ? "終了処理中..." : "要約してルームを終了"}
         </button>
       ) : (
         <span className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
@@ -704,6 +721,14 @@ function parseEndedSectionSummary(value: unknown): EndedSectionSummary | null {
   return {
     summaryId: summary.summaryId,
     sectionId: summary.sectionId,
+    resultLabel:
+      typeof summary.resultLabel === "string"
+        ? summary.resultLabel
+        : "セクション終了",
+    resultTitle:
+      typeof summary.resultTitle === "string"
+        ? summary.resultTitle
+        : "AI要約結果",
     content: summary.content,
     items: summary.items,
     sourceQuestions: summary.sourceQuestions,

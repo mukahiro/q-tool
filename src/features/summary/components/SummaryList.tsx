@@ -59,7 +59,7 @@ export function SummaryList({ summaries }: SummaryListProps) {
                   ) : null}
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
-                  セクションID: {summary.sectionId}
+                  対象ID: {summary.sectionId}
                 </p>
               </div>
 

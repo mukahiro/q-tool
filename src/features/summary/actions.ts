@@ -51,6 +51,9 @@ const endSectionSchema = z.object({
   roomId: z.string().min(1),
 });
 
+const WHOLE_CLASS_SUMMARY_SECTION_ID = "whole_class";
+const WHOLE_CLASS_SUMMARY_SECTION_NAME = "授業全体への質問";
+
 export async function endActiveSection(
   _previousState: EndSectionState,
   formData: FormData,
@@ -194,6 +197,120 @@ export async function endActiveSection(
   }
 }
 
+export async function endRoomAndSummarizeWholeClass(
+  roomId: string,
+): Promise<EndSectionState> {
+  const parsedInput = endSectionSchema.safeParse({ roomId });
+
+  if (!parsedInput.success) {
+    return {
+      ok: false,
+      message: "ルーム情報を確認できませんでした。",
+    };
+  }
+
+  const teacher = await getVerifiedTeacherFromAuthCookie();
+
+  if (!teacher) {
+    return {
+      ok: false,
+      message: SUMMARY_ERROR_MESSAGES.NOT_LOGGED_IN,
+    };
+  }
+
+  const db = getFirebaseAdminDb();
+  const roomRef = db.collection("rooms").doc(parsedInput.data.roomId);
+
+  try {
+    const roomSnapshot = await roomRef.get();
+
+    if (!roomSnapshot.exists) {
+      return { ok: false, message: SUMMARY_ERROR_MESSAGES.ROOM_NOT_FOUND };
+    }
+
+    const roomData = roomSnapshot.data();
+
+    if (roomData?.teacher_id !== teacher.uid) {
+      return { ok: false, message: SUMMARY_ERROR_MESSAGES.NOT_AUTHORIZED };
+    }
+
+    if (roomData?.is_active === false) {
+      return {
+        ok: false,
+        message: "このルームはすでに終了しています。",
+      };
+    }
+
+    const questions = await getWholeClassQuestions(parsedInput.data.roomId);
+    const summary = await generateSectionSummary(questions, {
+      emptyContent: "授業全体への質問は投稿されませんでした。",
+      emptyTitle: "授業全体への質問なし",
+      promptScope: "授業全体に向けて投稿された質問",
+    });
+    const sourceQuestions = toSourceQuestions(questions);
+    const summaryRef = roomRef.collection("summaries").doc();
+
+    await db.runTransaction(async (transaction) => {
+      const latestRoomSnapshot = await transaction.get(roomRef);
+
+      if (!latestRoomSnapshot.exists) {
+        throw new SummaryActionError(SUMMARY_ERROR_MESSAGES.ROOM_NOT_FOUND);
+      }
+
+      const latestRoomData = latestRoomSnapshot.data();
+
+      if (latestRoomData?.teacher_id !== teacher.uid) {
+        throw new SummaryActionError(SUMMARY_ERROR_MESSAGES.NOT_AUTHORIZED);
+      }
+
+      if (latestRoomData?.is_active === false) {
+        throw new SummaryActionError("このルームはすでに終了しています。");
+      }
+
+      transaction.set(summaryRef, {
+        id: summaryRef.id,
+        room_id: parsedInput.data.roomId,
+        section_id: WHOLE_CLASS_SUMMARY_SECTION_ID,
+        content: summary.content,
+        items: summary.items,
+        source_questions: sourceQuestions,
+        created_at: FieldValue.serverTimestamp(),
+      });
+
+      transaction.update(roomRef, {
+        is_active: false,
+        active_section_id: null,
+        updated_at: FieldValue.serverTimestamp(),
+        closed_at: FieldValue.serverTimestamp(),
+      });
+    });
+
+    revalidatePath(`/rooms/${parsedInput.data.roomId}`);
+    revalidatePath(`/rooms/${parsedInput.data.roomId}/summaries`);
+
+    return {
+      ok: true,
+      message: "ルームを終了し、授業全体への質問をAI要約しました。",
+      summaryId: summaryRef.id,
+      sectionId: WHOLE_CLASS_SUMMARY_SECTION_ID,
+      summaryContent: summary.content,
+      summaryItems: summary.items,
+      sourceQuestions,
+    };
+  } catch (error) {
+    if (error instanceof SummaryActionError) {
+      return { ok: false, message: error.message };
+    }
+
+    console.error("ルーム終了と授業全体への質問の要約に失敗しました", error);
+
+    return {
+      ok: false,
+      message: SUMMARY_ERROR_MESSAGES.ROOM_END_SUMMARY_FAILED,
+    };
+  }
+}
+
 export async function getRoomSummaries(
   roomId: string,
 ): Promise<GetRoomSummariesResult> {
@@ -281,16 +398,48 @@ async function getSectionQuestions(roomId: string, sectionId: string) {
     .sort((a, b) => a.createdAtMillis - b.createdAtMillis);
 }
 
+async function getWholeClassQuestions(roomId: string) {
+  const snapshot = await getFirebaseAdminDb()
+    .collection("rooms")
+    .doc(roomId)
+    .collection("questions")
+    .where("target_scope", "==", "whole_class")
+    .get();
+
+  return snapshot.docs
+    .map((questionDoc, index): SectionQuestion => {
+      const data = questionDoc.data();
+
+      return {
+        id: questionDoc.id,
+        sourceLabel: `Q${index + 1}`,
+        content: readString(data.content, ""),
+        reactionCount: readNumber(data.reaction_count),
+        createdAtMillis: toMillis(data.created_at),
+      };
+    })
+    .filter((question) => question.content.length > 0)
+    .sort((a, b) => a.createdAtMillis - b.createdAtMillis);
+}
+
 async function generateSectionSummary(
   questions: SectionQuestion[],
+  options?: {
+    emptyContent?: string;
+    emptyTitle?: string;
+    promptScope?: string;
+  },
 ): Promise<GeneratedSummary> {
   if (questions.length === 0) {
+    const content =
+      options?.emptyContent ?? "このセクションでは質問が投稿されませんでした。";
+
     return {
-      content: "このセクションでは質問が投稿されませんでした。",
+      content,
       items: [
         {
-          text: "このセクションでは質問が投稿されませんでした。",
-          title: "質問なし",
+          text: content,
+          title: options?.emptyTitle ?? "質問なし",
           source_question_ids: [],
           interest_degree: 0,
         },
@@ -312,13 +461,15 @@ async function generateSectionSummary(
     },
   });
 
-  const result = await model.generateContent(buildSummaryPrompt(questions));
+  const result = await model.generateContent(
+    buildSummaryPrompt(questions, options?.promptScope),
+  );
   const text = result.response.text().trim();
 
   return parseGeminiSummary(text, questions);
 }
 
-function buildSummaryPrompt(questions: SectionQuestion[]) {
+function buildSummaryPrompt(questions: SectionQuestion[], promptScope?: string) {
   const questionLines = questions
     .map(
       (question) =>
@@ -327,7 +478,7 @@ function buildSummaryPrompt(questions: SectionQuestion[]) {
     .join("\n");
 
   return `あなたは授業中の質問を整理する日本語の教育アシスタントです。
-次の質問一覧を読み、教師が口頭で回答しやすいように要約してください。
+次の${promptScope ?? "質問一覧"}を読み、教師が口頭で回答しやすいように要約してください。
 empathy_count は学生からの共感数です。summary_weight は要約時の重みで、値が大きい質問ほど優先して扱ってください。
 
 出力は必ず次の JSON だけにしてください。Markdown のコードブロックは使わないでください。
@@ -467,7 +618,10 @@ function toSummaryDisplay(
   return {
     id,
     sectionId,
-    sectionName: sectionNameById.get(sectionId) ?? "不明なセクション",
+    sectionName:
+      sectionId === WHOLE_CLASS_SUMMARY_SECTION_ID
+        ? WHOLE_CLASS_SUMMARY_SECTION_NAME
+        : (sectionNameById.get(sectionId) ?? "不明なセクション"),
     content,
     items: items.length > 0 ? items : toFallbackSummaryItems(content),
     sourceQuestions,
