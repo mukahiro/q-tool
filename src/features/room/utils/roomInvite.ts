@@ -4,11 +4,16 @@ type FirestoreStringValue = {
   stringValue?: string;
 };
 
+type FirestoreBooleanValue = {
+  booleanValue?: boolean;
+};
+
 type FirestoreRoomResponse = {
   fields?: {
     teacher_id?: FirestoreStringValue;
     name?: FirestoreStringValue;
     invite_code?: FirestoreStringValue;
+    is_active?: FirestoreBooleanValue;
   };
 };
 
@@ -19,6 +24,7 @@ export type OwnedRoomInviteResult =
         id: string;
         name: string;
         inviteCode: string;
+        isActive: boolean;
       };
     }
   | {
@@ -87,8 +93,14 @@ export async function getOwnedRoomInvite({
   const roomTeacherId = document.fields?.teacher_id?.stringValue;
   const roomName = document.fields?.name?.stringValue;
   const inviteCode = document.fields?.invite_code?.stringValue;
+  const isActive = document.fields?.is_active?.booleanValue;
 
-  if (!roomTeacherId || !roomName || !inviteCode) {
+  if (
+    !roomTeacherId ||
+    !roomName ||
+    !inviteCode ||
+    typeof isActive !== "boolean"
+  ) {
     throw new Error("Firestore room document is missing required fields.");
   }
 
@@ -104,6 +116,7 @@ export async function getOwnedRoomInvite({
       id: roomId,
       name: roomName,
       inviteCode,
+      isActive,
     },
   };
 }

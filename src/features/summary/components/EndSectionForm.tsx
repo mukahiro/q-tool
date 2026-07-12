@@ -70,7 +70,7 @@ export function EndSectionForm({
         disabled={!hasActiveSection || isPending}
         className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto cursor-pointer"
       >
-        {isPending ? "要約を作成中..." : "セクションを終了して要約"}
+        {isPending ? "要約を作成中..." : "要約してセクションを終了"}
       </button>
 
       {state.message ? (

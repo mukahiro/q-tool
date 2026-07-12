@@ -9,6 +9,8 @@ export const SUMMARY_ERROR_MESSAGES = {
     "AI要約の準備が完了していません。管理者に確認してください。",
   SUMMARY_FAILED:
     "セクションの終了と要約に失敗しました。時間をおいてもう一度お試しください。",
+  ROOM_END_SUMMARY_FAILED:
+    "ルームの終了と授業全体への質問の要約に失敗しました。時間をおいてもう一度お試しください。",
   FETCH_FAILED:
     "要約一覧を読み込めませんでした。時間をおいてもう一度お試しください。",
 } as const;

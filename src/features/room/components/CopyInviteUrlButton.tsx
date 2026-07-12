@@ -32,7 +32,7 @@ export function CopyInviteUrlButton({
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-flex w-full items-center justify-center rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+        className="inline-flex w-full items-center justify-center rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 cursor-pointer"
       >
         入室URLをコピー
       </button>

@@ -19,6 +19,7 @@ type SectionSummaryModalProps = {
   roomId: string;
   sectionId: string;
   sectionName: string;
+  missingMessage?: string;
 };
 
 type LoadedSummary = {
@@ -35,6 +36,7 @@ export function SectionSummaryModal({
   roomId,
   sectionId,
   sectionName,
+  missingMessage = "このセクションのAI要約はまだありません。",
 }: SectionSummaryModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [summary, setSummary] = useState<LoadedSummary | null>(null);
@@ -51,7 +53,7 @@ export function SectionSummaryModal({
 
       if (!loadedSummary) {
         setSummary(null);
-        setMessage("このセクションのAI要約はまだありません。");
+        setMessage(missingMessage);
         return;
       }
 

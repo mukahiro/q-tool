@@ -57,6 +57,7 @@ export default async function RoomInvitePage({
       roomId={result.room.id}
       roomName={result.room.name}
       inviteCode={result.room.inviteCode}
+      isActive={result.room.isActive}
       inviteUrl={inviteUrl}
       qrCodeDataUrl={qrCodeDataUrl}
     />

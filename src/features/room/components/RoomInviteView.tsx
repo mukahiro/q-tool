@@ -6,6 +6,7 @@ type RoomInviteViewProps = {
   roomId: string;
   roomName: string;
   inviteCode: string;
+  isActive: boolean;
   inviteUrl: string;
   qrCodeDataUrl: string;
 };
@@ -14,6 +15,7 @@ export function RoomInviteView({
   roomId,
   roomName,
   inviteCode,
+  isActive,
   inviteUrl,
   qrCodeDataUrl,
 }: RoomInviteViewProps) {
@@ -29,19 +31,34 @@ export function RoomInviteView({
             ]}
           />
           <h1 className="mt-1 text-3xl font-semibold">学生入室用QR・PIN</h1>
-          <p className="mt-3 text-lg font-medium text-slate-800">
-            {roomName}
-          </p>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            学生にQRコードを読み取ってもらうか、PINコードを入力してもらってください。
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <p className="text-lg font-medium text-slate-800">
+              {roomName}
+            </p>
+            <span
+              className={
+                isActive
+                  ? "rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
+                  : "rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700"
+              }
+            >
+              {isActive ? "開講中" : "終了"}
+            </span>
+          </div>
         </header>
 
+        {!isActive && (
+          <div className="rounded-lg border border-rose-50 bg-rose-50 p-4 text-sm text-rose-700 mt-6">
+            このルームは終了済みです。新しく質問の投稿をすることはできません。
+          </div>
+        )}
+
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
+
           <section className="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
             <h2 className="text-lg font-semibold">QRコード</h2>
             <p className="mt-2 text-sm text-slate-600">
-              学生用入室URLを表示しています。
+              学生用入室URLを表示しています。スマホ等のカメラで読み取ってください。
             </p>
 
             <div className="mt-6 flex flex-col items-center">
@@ -69,10 +86,10 @@ export function RoomInviteView({
             <div className="text-center">
               <h2 className="text-lg font-semibold">PINコード</h2>
               <p className="mt-2 text-sm text-slate-600">
-                QRコードを読み取れない場合に使用します。
+                QRコードを読み取れない場合に使用します。全て半角英数字で入力してください。
               </p>
 
-              <p className="mt-8 break-all font-mono text-5xl font-bold tracking-[0.2em] text-slate-950 sm:text-6xl">
+              <p className="mt-8 break-all font-mono text-6xl font-bold tracking-[0.2em] text-slate-950 sm:text-8xl">
                 {inviteCode}
               </p>
             </div>

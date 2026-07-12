@@ -76,10 +76,15 @@ export async function resolveJoinRoom(
 
     const roomData = roomSnapshot.data();
 
-    if (roomData?.is_active !== true) {
+    if (!roomData) {
+      console.error("roomsドキュメントのデータが空です", {
+        roomId,
+      });
+
       return {
-        status: "closed",
-        message: "このルームは終了しているため入室できません。",
+        status: "error",
+        message:
+          "ルーム情報を読み込めませんでした。時間をおいてもう一度お試しください。",
       };
     }
 

@@ -3,6 +3,7 @@
 import { Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import { SectionSummaryModal } from "@/features/question/components/SectionSummaryModal";
+import { endRoomAndSummarizeWholeClass } from "@/features/summary/actions";
 import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
 import { SummaryResultContent } from "@/features/summary/components/SummaryResultContent";
 import type {
@@ -11,7 +12,6 @@ import type {
 } from "@/features/summary/types";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { endRoom } from "../actions";
 import type { RoomDisplay, RoomSectionDisplay } from "../types";
 import { RoomSectionCreateForm } from "./RoomSectionCreateForm";
 
@@ -31,8 +31,6 @@ type NextStepEndRoomProps = {
 type RoomMetaItemProps = {
   label: string;
   value: string;
-  surfaceClassName: string;
-  borderClassName: string;
   emphasis?: boolean;
 };
 
@@ -40,13 +38,14 @@ type SectionListProps = {
   roomId: string;
   sections: RoomSectionDisplay[];
   activeSectionId: string | null;
-  bodyText: string;
   isFullscreen: boolean;
 };
 
 type EndedSectionSummary = {
   summaryId: string;
   sectionId: string;
+  resultLabel: string;
+  resultTitle: string;
   content: string;
   items: SummaryItem[];
   sourceQuestions: SummarySourceQuestion[];
@@ -76,23 +75,10 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   const sectionNameInputRef = useRef<HTMLInputElement>(null);
   const [isRoomEnding, startRoomEndTransition] = useTransition();
 
-  // ルーム状態を日本語で表示
-  const statusText = roomState.is_active ? "開講中" : "終了";
-  const pageBackground = roomState.is_active ? "bg-slate-50" : "bg-zinc-700";
-  const cardBackground = roomState.is_active ? "bg-white" : "bg-zinc-300";
-  const cardBorder = roomState.is_active ? "border-slate-200" : "border-zinc-300";
-  const titleColor = roomState.is_active ? "text-slate-950" : "text-zinc-800";
-  const mutedText = roomState.is_active ? "text-slate-500" : "text-zinc-600";
-  const bodyText = roomState.is_active ? "text-slate-900" : "text-zinc-700";
-  const subtleBadge = roomState.is_active
-    ? "bg-slate-100 text-slate-700"
-    : "bg-zinc-200 text-zinc-700";
-  const metaSurface = roomState.is_active ? "bg-slate-50" : "bg-zinc-200";
-  const metaBorder = roomState.is_active ? "border-slate-200" : "border-zinc-300";
   const isSectionActive = Boolean(roomState.active_section_id);
   const sectionAreaClass = isSectionFullscreen
-    ? `fixed inset-0 z-50 flex flex-col overflow-hidden rounded-none border-0 p-4 shadow-2xl sm:p-6 ${cardBackground}`
-    : `rounded-lg border p-5 shadow-sm ${cardBackground} ${cardBorder}`;
+    ? "fixed inset-0 z-50 flex flex-col overflow-hidden rounded-none border-0 bg-white p-4 shadow-2xl sm:p-6"
+    : "rounded-lg border border-slate-200 bg-white p-5 shadow-sm";
 
   // 日時をフォーマット
   const formatDate = (date: Date) => {
@@ -107,7 +93,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
 
   const handleEndRoom = () => {
     const confirmed = window.confirm(
-      "ルームを終了しますか？終了後は学生が新しい質問を投稿できなくなります。",
+      "ルームを終了しますか？終了後は学生が新しい質問を投稿できなくなり、授業全体への質問をAI要約します。",
     );
 
     if (!confirmed) {
@@ -116,11 +102,24 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
 
     setFeedbackMessage(null);
     startRoomEndTransition(async () => {
-      const result = await endRoom(roomState.id);
+      const result = await endRoomAndSummarizeWholeClass(roomState.id);
 
-      if (result.ok) {
+      if (result.ok && result.summaryId && result.sectionId) {
         const now = new Date();
+        const nextSummary: EndedSectionSummary = {
+          summaryId: result.summaryId,
+          sectionId: result.sectionId,
+          resultLabel: "ルーム終了",
+          resultTitle: "授業全体への質問のAI要約結果",
+          content:
+            result.summaryContent ??
+            "ルームを終了し、授業全体への質問をAI要約しました。",
+          items: result.summaryItems ?? [],
+          sourceQuestions: result.sourceQuestions ?? [],
+        };
 
+        saveEndedSectionSummary(roomState.id, nextSummary);
+        setEndedSectionSummary(nextSummary);
         setRoomState((currentRoom) => ({
           ...currentRoom,
           is_active: false,
@@ -134,12 +133,12 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           updated_at: now,
           closed_at: now,
         }));
-        setFeedbackMessage(result.message);
+        setFeedbackMessage(result.message ?? null);
         router.refresh();
         return;
       }
 
-      setFeedbackMessage(result.message);
+      setFeedbackMessage(result.message ?? null);
     });
   };
 
@@ -201,6 +200,8 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
     const nextSummary: EndedSectionSummary = {
       summaryId,
       sectionId,
+      resultLabel: "セクション終了",
+      resultTitle: "AI要約結果",
       content: summaryContent ?? "セクションを終了し、AI要約を保存しました。",
       items: summaryItems ?? [],
       sourceQuestions: sourceQuestions ?? [],
@@ -237,15 +238,15 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
   };
 
   return (
-    <div className={`space-y-6 ${pageBackground} rounded-2xl`}>
+    <div className="space-y-6 rounded-2xl bg-slate-50">
       {/* ルーム名とステータス */}
-      <section className={`rounded-lg border p-6 shadow-sm ${cardBackground} ${cardBorder}`}>
+      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <h1 className={`text-2xl font-bold ${titleColor}`}>{roomState.name}</h1>
+              <h1 className="text-2xl font-bold text-slate-950">{roomState.name}</h1>
               <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-                <span className={`rounded-full px-3 py-1 ${subtleBadge}`}>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
                   招待コード: <span className="font-mono font-bold">{roomState.invite_code}</span>
                 </span>
                 <span
@@ -255,16 +256,14 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
                       : "rounded-full bg-rose-50 px-3 py-1 text-rose-700"
                   }
                 >
-                  {statusText}
+                  {roomState.is_active ? "開講中" : "終了"}
                 </span>
               </div>
             </div>
 
             {feedbackMessage ? (
               <p
-                className={`rounded-md px-3 py-2 text-sm font-semibold ${
-                  roomState.is_active ? "text-emerald-700" : "text-amber-300"
-                }`}
+                className="rounded-md px-3 py-2 text-sm font-semibold text-emerald-700"
               >
                 {feedbackMessage}
               </p>
@@ -275,38 +274,34 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
             <RoomMetaItem
               label="質問数"
               value={`${roomState.question_count}件`}
-              surfaceClassName={metaSurface}
-              borderClassName={metaBorder}
             />
             {roomState.creator_name ? (
               <RoomMetaItem
                 label="作成者"
                 value={roomState.creator_name}
-                surfaceClassName={metaSurface}
-                borderClassName={metaBorder}
               />
             ) : null}
             <RoomMetaItem
               label="作成日時"
               value={formatDate(roomState.created_at)}
-              surfaceClassName={metaSurface}
-              borderClassName={metaBorder}
             />
             <RoomMetaItem
               label="最終更新"
               value={formatDate(roomState.updated_at)}
-              surfaceClassName={metaSurface}
-              borderClassName={metaBorder}
             />
             <RoomMetaItem
               label="終了日時"
               value={roomState.closed_at ? formatDate(roomState.closed_at) : "未終了"}
-              surfaceClassName={metaSurface}
-              borderClassName={metaBorder}
             />
           </dl>
         </div>
       </section>
+
+      {!roomState.is_active && (
+        <div className="rounded-lg border border-rose-50 bg-rose-50 p-4 text-sm text-rose-700">
+          このルームは終了済みです。セクションの作成や質問の投稿はできません。
+        </div>
+      )}
 
       {/* 次に使う操作 */}
       <section className="grid gap-4 lg:grid-cols-3">
@@ -333,11 +328,11 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
       <section className={sectionAreaClass}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className={`text-sm font-semibold ${mutedText}`}>セクション</h2>
-            <p className={`mt-2 text-lg font-semibold ${titleColor}`}>
+            <h2 className="text-sm font-semibold text-slate-500">セクション</h2>
+            <p className="mt-2 text-lg font-semibold text-slate-950">
               {roomState.active_section_name ?? "進行中のセクションはありません"}
             </p>
-            <p className={`mt-2 text-sm ${bodyText}`}>
+            <p className="mt-2 text-sm text-slate-900">
               {isSectionActive
                 ? "セクション終了で要約と回答の時間に進みます。"
                 : "次のセクションを作成して授業を再開できます。"}
@@ -393,7 +388,6 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           roomId={roomState.id}
           sections={roomState.sections}
           activeSectionId={roomState.active_section_id}
-          bodyText={bodyText}
           isFullscreen={isSectionFullscreen}
         />
       </section>
@@ -412,13 +406,13 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
             <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-emerald-700">
-                  セクション終了
+                  {endedSectionSummary.resultLabel}
                 </p>
                 <h3
                   id="summary-result-title"
                   className="mt-1 text-xl font-semibold text-slate-950"
                 >
-                  AI要約結果
+                  {endedSectionSummary.resultTitle}
                 </h3>
               </div>
               <button
@@ -482,12 +476,10 @@ function NextStepLink({ href, label, description, actionLabel }: NextStepLinkPro
 function RoomMetaItem({
   label,
   value,
-  surfaceClassName,
-  borderClassName,
   emphasis = false,
 }: RoomMetaItemProps) {
   return (
-    <div className={`rounded-md border px-4 py-3 ${surfaceClassName} ${borderClassName}`}>
+    <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
       <dt className="text-xs font-semibold text-slate-500">{label}</dt>
       <dd
         className={
@@ -512,7 +504,7 @@ function NextStepEndRoom({
       <span>
         <span className="block text-sm font-semibold text-slate-950">ルーム終了</span>
         <span className="mt-2 block text-sm leading-6 text-slate-600">
-          授業が終わったら受付を止め、新しい質問の投稿を締め切ります。
+          授業全体への質問をAI要約して、ルームを終了します。終了後は学生が新しい質問を投稿できなくなります。
         </span>
       </span>
       {isActive ? (
@@ -522,7 +514,7 @@ function NextStepEndRoom({
           disabled={isPending}
           className="mt-4 inline-flex min-h-10 cursor-pointer items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-400"
         >
-          {isPending ? "終了処理中..." : "ルームを終了"}
+          {isPending ? "終了処理中..." : "要約してルームを終了"}
         </button>
       ) : (
         <span className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
@@ -537,7 +529,6 @@ function SectionList({
   roomId,
   sections,
   activeSectionId,
-  bodyText,
   isFullscreen,
 }: SectionListProps) {
   if (sections.length === 0) {
@@ -550,7 +541,7 @@ function SectionList({
           <h3 className="mt-2 text-xl font-bold text-slate-950">
             最初のセクションを作成しましょう
           </h3>
-          <p className={`mt-2 text-sm leading-6 ${bodyText}`}>
+          <p className="mt-2 text-sm leading-6 text-slate-900">
             セクションを作成すると、授業の区切りごとに質問を集めて要約できます。
           </p>
         </div>
@@ -576,12 +567,6 @@ function SectionList({
             : section.is_completed
               ? "bg-slate-100 text-slate-700"
               : "bg-amber-100 text-amber-700";
-          const statusText = isCurrent
-            ? "現在のセクション"
-            : section.is_completed
-              ? "過去のセクション"
-              : "未完了のセクション";
-
           return (
             <li
               key={section.id}
@@ -594,7 +579,11 @@ function SectionList({
                       {section.name}
                     </h3>
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass}`}>
-                      {statusText}
+                      {isCurrent
+                        ? "現在のセクション"
+                        : section.is_completed
+                          ? "過去のセクション"
+                          : "未完了のセクション"}
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
@@ -704,6 +693,14 @@ function parseEndedSectionSummary(value: unknown): EndedSectionSummary | null {
   return {
     summaryId: summary.summaryId,
     sectionId: summary.sectionId,
+    resultLabel:
+      typeof summary.resultLabel === "string"
+        ? summary.resultLabel
+        : "セクション終了",
+    resultTitle:
+      typeof summary.resultTitle === "string"
+        ? summary.resultTitle
+        : "AI要約結果",
     content: summary.content,
     items: summary.items,
     sourceQuestions: summary.sourceQuestions,

@@ -270,7 +270,8 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
       };
     });
 
-    const wholeClassGroups = groupsBySectionId.has(WHOLE_CLASS_GROUP_ID)
+    const wholeClassGroups =
+      groupsBySectionId.has(WHOLE_CLASS_GROUP_ID) || !room.isActive
       ? [
           {
             sectionId: WHOLE_CLASS_GROUP_ID,
@@ -300,6 +301,7 @@ export function useQuestionChat(initialRoom: StudentChatRoom) {
     reactedQuestionIds,
     recentlyAddedQuestionIds,
     room.activeSectionId,
+    room.isActive,
     sections,
     studentSessionId,
   ]);
