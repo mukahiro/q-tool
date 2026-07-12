@@ -293,7 +293,7 @@ export function QuestionChatPage({
       )}
 
       {!room.isActive && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700">
+        <div className="rounded-lg border border-rose-50 bg-rose-50 p-4 text-sm text-rose-700">
           このルームは終了済みです。質問の閲覧はできますが、新しい投稿はできません。
         </div>
       )}
@@ -326,6 +326,7 @@ export function QuestionChatPage({
             isExpanded={
               !group.isPastSection || expandedPastSectionIds.has(group.sectionId)
             }
+            isRoomActive={room.isActive}
             isPending={isPending}
             onToggle={togglePastSection}
             onReaction={handleReaction}
@@ -459,6 +460,7 @@ function QuestionSection({
   roomId,
   group,
   isExpanded,
+  isRoomActive,
   isPending,
   onToggle,
   onReaction,
@@ -466,10 +468,14 @@ function QuestionSection({
   roomId: string;
   group: QuestionSectionGroup;
   isExpanded: boolean;
+  isRoomActive: boolean;
   isPending: boolean;
   onToggle: (sectionId: string) => void;
   onReaction: (questionId: string) => void;
 }) {
+  const shouldShowSummaryButton =
+    group.isPastSection || (!isRoomActive && group.isWholeClass);
+
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -499,35 +505,42 @@ function QuestionSection({
           </p>
         </div>
 
-        {group.isPastSection ? (
+        {shouldShowSummaryButton ? (
           <div className="flex shrink-0 items-center gap-2">
             <SectionSummaryModal
               roomId={roomId}
               sectionId={group.sectionId}
               sectionName={group.sectionName}
+              missingMessage={
+                group.isWholeClass
+                  ? "授業全体への質問のAI要約はまだありません。"
+                  : undefined
+              }
             />
 
-            <button
-              type="button"
-              onClick={() => onToggle(group.sectionId)}
-              aria-expanded={isExpanded}
-              aria-label={
-                isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
-              }
-              title={
-                isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
-              }
-              className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-50"
-            >
-              <ChevronDown
-                aria-hidden="true"
-                className={
-                  isExpanded
-                    ? "size-5 rotate-180 transition-transform"
-                    : "size-5 transition-transform"
+            {group.isPastSection ? (
+              <button
+                type="button"
+                onClick={() => onToggle(group.sectionId)}
+                aria-expanded={isExpanded}
+                aria-label={
+                  isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
                 }
-              />
-            </button>
+                title={
+                  isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
+                }
+                className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-50"
+              >
+                <ChevronDown
+                  aria-hidden="true"
+                  className={
+                    isExpanded
+                      ? "size-5 rotate-180 transition-transform"
+                      : "size-5 transition-transform"
+                  }
+                />
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>
