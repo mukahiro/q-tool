@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { resolveJoinRoom } from "@/features/join/actions";
@@ -21,6 +27,10 @@ const INITIAL_ATTEMPT_STATUS: JoinAttemptStatus = {
   remainingMs: 0,
 };
 
+function normalizePinInput(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+}
+
 export function JoinForm() {
   const router = useRouter();
 
@@ -29,6 +39,7 @@ export function JoinForm() {
   const [attemptStatus, setAttemptStatus] =
     useState<JoinAttemptStatus>(INITIAL_ATTEMPT_STATUS);
   const [isPending, startTransition] = useTransition();
+  const autoSubmittedPinRef = useRef<string | null>(null);
 
   useEffect(() => {
     function refreshAttemptStatus() {
@@ -56,9 +67,7 @@ export function JoinForm() {
     };
   }, []);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  const submitPin = useCallback((nextPin: string) => {
     const latestAttemptStatus = getJoinAttemptStatus();
     setAttemptStatus(latestAttemptStatus);
 
@@ -66,7 +75,7 @@ export function JoinForm() {
       return;
     }
 
-    const normalizedPin = pin.trim().toUpperCase();
+    const normalizedPin = nextPin.trim().toUpperCase();
 
     startTransition(async () => {
       setErrorMessage("");
@@ -107,6 +116,30 @@ export function JoinForm() {
         );
       }
     });
+  }, [router, startTransition]);
+
+  useEffect(() => {
+    const normalizedPin = pin.trim().toUpperCase();
+
+    if (normalizedPin.length < 6) {
+      autoSubmittedPinRef.current = null;
+      return;
+    }
+
+    if (
+      normalizedPin.length === 6 &&
+      !isPending &&
+      !attemptStatus.locked &&
+      autoSubmittedPinRef.current !== normalizedPin
+    ) {
+      autoSubmittedPinRef.current = normalizedPin;
+      submitPin(normalizedPin);
+    }
+  }, [attemptStatus.locked, isPending, pin, submitPin]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    submitPin(pin);
   }
 
   const isLocked = attemptStatus.locked;
@@ -123,7 +156,7 @@ export function JoinForm() {
         </h1>
 
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          教師から案内された6文字のPINを入力してください。
+          教師から案内された6文字のPIN (数字・大文字英字) を入力して、ルームに入室してください。
         </p>
 
         <form
@@ -139,8 +172,10 @@ export function JoinForm() {
               type="text"
               value={pin}
               onChange={(event) =>
-                setPin(event.target.value.toUpperCase())
+                setPin(normalizePinInput(event.target.value))
               }
+              maxLength={6}
+              pattern="[A-Za-z0-9]*"
               autoCapitalize="characters"
               autoComplete="off"
               spellCheck={false}
