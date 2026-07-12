@@ -13,10 +13,6 @@ export type JoinRoomResult =
       message: string;
     }
   | {
-      status: "closed";
-      message: string;
-    }
-  | {
       status: "error";
       message: string;
     };
