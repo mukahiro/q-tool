@@ -52,7 +52,7 @@ export function QuestionChatPage({
     setErrorMessage,
   } = useQuestionChat(initialRoom);
   const [content, setContent] = useState("");
-  const [expandedPastSectionIds, setExpandedPastSectionIds] = useState<
+  const [toggledSectionIds, setToggledSectionIds] = useState<
     Set<string>
   >(() => new Set());
   const [targetScope, setTargetScope] =
@@ -167,8 +167,8 @@ export function QuestionChatPage({
     });
   }
 
-  function togglePastSection(sectionId: string) {
-    setExpandedPastSectionIds((current) => {
+  function toggleSection(sectionId: string) {
+    setToggledSectionIds((current) => {
       const next = new Set(current);
 
       if (next.has(sectionId)) {
@@ -190,14 +190,16 @@ export function QuestionChatPage({
       (group) => group.sectionId === newQuestionNotice.sectionId,
     );
 
-    if (noticeSection?.isPastSection) {
-      setExpandedPastSectionIds((current) => {
-        if (current.has(newQuestionNotice.sectionId)) {
-          return current;
+    if (noticeSection) {
+      setToggledSectionIds((current) => {
+        const next = new Set(current);
+
+        if (isDefaultExpandedGroup(noticeSection)) {
+          next.delete(newQuestionNotice.sectionId);
+        } else {
+          next.add(newQuestionNotice.sectionId);
         }
 
-        const next = new Set(current);
-        next.add(newQuestionNotice.sectionId);
         return next;
       });
     }
@@ -323,12 +325,10 @@ export function QuestionChatPage({
             key={group.sectionId}
             roomId={room.id}
             group={group}
-            isExpanded={
-              !group.isPastSection || expandedPastSectionIds.has(group.sectionId)
-            }
+            isExpanded={isGroupExpanded(group, toggledSectionIds)}
             isRoomActive={room.isActive}
             isPending={isPending}
-            onToggle={togglePastSection}
+            onToggle={toggleSection}
             onReaction={handleReaction}
           />
         ))}
@@ -456,6 +456,21 @@ export function QuestionChatPage({
   );
 }
 
+function isDefaultExpandedGroup(group: QuestionSectionGroup) {
+  return group.isWholeClass || group.isActiveSection;
+}
+
+function isGroupExpanded(
+  group: QuestionSectionGroup,
+  toggledSectionIds: Set<string>,
+) {
+  const isDefaultExpanded = isDefaultExpandedGroup(group);
+
+  return toggledSectionIds.has(group.sectionId)
+    ? !isDefaultExpanded
+    : isDefaultExpanded;
+}
+
 function QuestionSection({
   roomId,
   group,
@@ -505,8 +520,8 @@ function QuestionSection({
           </p>
         </div>
 
-        {shouldShowSummaryButton ? (
-          <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          {shouldShowSummaryButton ? (
             <SectionSummaryModal
               roomId={roomId}
               sectionId={group.sectionId}
@@ -517,39 +532,35 @@ function QuestionSection({
                   : undefined
               }
             />
+          ) : null}
 
-            {group.isPastSection ? (
-              <button
-                type="button"
-                onClick={() => onToggle(group.sectionId)}
-                aria-expanded={isExpanded}
-                aria-label={
-                  isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
-                }
-                title={
-                  isExpanded ? "過去のセクションを隠す" : "過去のセクションを表示する"
-                }
-                className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-50"
-              >
-                <ChevronDown
-                  aria-hidden="true"
-                  className={
-                    isExpanded
-                      ? "size-5 rotate-180 transition-transform"
-                      : "size-5 transition-transform"
-                  }
-                />
-              </button>
-            ) : null}
-          </div>
-        ) : null}
+          <button
+            type="button"
+            onClick={() => onToggle(group.sectionId)}
+            aria-expanded={isExpanded}
+            aria-label={isExpanded ? "質問を隠す" : "質問を表示する"}
+            title={isExpanded ? "質問を隠す" : "質問を表示する"}
+            className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-50"
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={
+                isExpanded
+                  ? "size-5 rotate-180 transition-transform"
+                  : "size-5 transition-transform"
+              }
+            />
+          </button>
+        </div>
       </div>
 
       {isExpanded && (
         <div className="space-y-3 border-t border-slate-100 p-4">
           {group.questions.length === 0 ? (
             <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              このセクションにはまだ質問がありません。
+              {group.isWholeClass
+                ? "授業全体への質問はまだありません。"
+                : "このセクションにはまだ質問がありません。"}
             </p>
           ) : (
             group.questions.map((question) => (
