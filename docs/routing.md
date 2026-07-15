@@ -129,8 +129,8 @@ export default async function Page({
 | 項目 | 内容 |
 | :--- | :--- |
 | ファイル | `src/app/rooms/[roomId]/summaries/page.tsx` |
-| 主な利用者 | 教師 |
-| 認証 | ルーム作成者の教師ログインが必要 |
+| 主な利用者 | 教師、学生 |
+| 認証 | 不要 |
 | 主な内容 | セクション終了後に生成されたAI要約の一覧 |
 
 ### 3.9 `/join`
@@ -229,6 +229,12 @@ Firestoreの取得、フォームの状態管理、エラー表示などは `fea
 /rooms/[roomId] -> /rooms/[roomId]/invite
 ```
 
+要約確認:
+
+```text
+/rooms/[roomId] -> /rooms/[roomId]/summaries
+```
+
 ### 学生
 
 PIN入力:
@@ -241,6 +247,12 @@ QRコードまたは共有URL:
 
 ```text
 /join/[inviteCode] -> /rooms/[roomId]/chat
+```
+
+要約確認:
+
+```text
+/rooms/[roomId]/chat -> /rooms/[roomId]/summaries
 ```
 
 ## 8. 今後追加を検討するルート

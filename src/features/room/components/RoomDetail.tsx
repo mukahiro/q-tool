@@ -304,7 +304,7 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
       )}
 
       {/* 次に使う操作 */}
-      <section className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <NextStepLink
           href={`/rooms/${roomState.id}/invite`}
           label="学生に共有する"
@@ -316,6 +316,12 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
           label="質問を確認する"
           description="学生から届いた質問を授業中に確認します。教室表示にも使いやすい画面です。"
           actionLabel="チャットを開く"
+        />
+        <NextStepLink
+          href={`/rooms/${roomState.id}/summaries`}
+          label="要約を確認する"
+          description="終了したセクションや授業全体への質問のAI要約を一覧で確認できます。"
+          actionLabel="要約一覧を開く"
         />
         <NextStepEndRoom
           isActive={roomState.is_active}
