@@ -260,8 +260,8 @@ export function QuestionChatPage({
       )}
 
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-3">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h1 className="mt-1 text-2xl font-bold text-slate-950">
               {room.name}
             </h1>
@@ -285,6 +285,12 @@ export function QuestionChatPage({
                 : "受付中のセクションなし"}
             </span>
           </div>
+          <Link
+            href={`/rooms/${room.id}/summaries`}
+            className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+          >
+            要約一覧
+          </Link>
         </div>
       </section>
 

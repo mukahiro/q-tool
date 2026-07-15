@@ -314,16 +314,6 @@ export async function endRoomAndSummarizeWholeClass(
 export async function getRoomSummaries(
   roomId: string,
 ): Promise<GetRoomSummariesResult> {
-  const teacher = await getVerifiedTeacherFromAuthCookie();
-
-  if (!teacher) {
-    return {
-      ok: false,
-      summaries: [],
-      message: SUMMARY_ERROR_MESSAGES.NOT_LOGGED_IN,
-    };
-  }
-
   try {
     const db = getFirebaseAdminDb();
     const roomSnapshot = await db.collection("rooms").doc(roomId).get();
@@ -333,14 +323,6 @@ export async function getRoomSummaries(
         ok: false,
         summaries: [],
         message: SUMMARY_ERROR_MESSAGES.ROOM_NOT_FOUND,
-      };
-    }
-
-    if (roomSnapshot.data()?.teacher_id !== teacher.uid) {
-      return {
-        ok: false,
-        summaries: [],
-        message: SUMMARY_ERROR_MESSAGES.NOT_AUTHORIZED,
       };
     }
 
