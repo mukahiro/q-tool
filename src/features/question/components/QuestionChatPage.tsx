@@ -261,29 +261,29 @@ export function QuestionChatPage({
 
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-3">
             <h1 className="mt-1 text-2xl font-bold text-slate-950">
               {room.name}
             </h1>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="text-sm text-slate-600">
               作成者: {room.teacherName ?? "未設定"}
             </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span
-              className={
-                room.isActive
-                  ? "rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"
-                  : "rounded-full bg-slate-100 px-3 py-1 text-slate-600"
-              }
-            >
-              {room.isActive ? "受付中" : "終了済み"}
-            </span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-              {room.activeSectionId
-                ? `セクション: ${activeSectionName}`
-                : "受付中のセクションなし"}
-            </span>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold">
+              <span
+                className={
+                  room.isActive
+                    ? "rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"
+                    : "rounded-full bg-slate-100 px-3 py-1 text-slate-600"
+                }
+              >
+                {room.isActive ? "受付中" : "終了済み"}
+              </span>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                {room.activeSectionId
+                  ? `セクション: ${activeSectionName}`
+                  : "受付中のセクションなし"}
+              </span>
+            </div>
           </div>
           <Link
             href={`/rooms/${room.id}/summaries`}
