@@ -6,6 +6,16 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAuthToken } from "@/features/auth/actions";
 import { getVerifiedTeacherFromAuthCookie } from "@/features/auth/utils/server";
+import {
+  DEFAULT_SUMMARY_LANGUAGE,
+  DEFAULT_SUMMARY_TONE,
+  SUMMARY_LANGUAGE_OPTIONS,
+  SUMMARY_TONE_OPTIONS,
+  normalizeSummaryLanguage,
+  normalizeSummaryTone,
+  type SummaryLanguage,
+  type SummaryTone,
+} from "@/features/summary/settings";
 import { getFirebaseAdminAuth, getFirebaseAdminDb } from "@/lib/firebase/admin";
 import type {
   CreateRoomState,
@@ -55,6 +65,18 @@ const createRoomSchema = z.object({
     .trim()
     .min(1, "ルーム名を入力してください。")
     .max(80, "ルーム名は80文字以内で入力してください。"),
+  summaryLanguage: z.enum(
+    SUMMARY_LANGUAGE_OPTIONS.map((option) => option.value) as [
+      SummaryLanguage,
+      ...SummaryLanguage[],
+    ],
+  ),
+  summaryTone: z.enum(
+    SUMMARY_TONE_OPTIONS.map((option) => option.value) as [
+      SummaryTone,
+      ...SummaryTone[],
+    ],
+  ),
 });
 
 const createSectionSchema = z.object({
@@ -150,8 +172,18 @@ export async function createRoom(
   }
 
   const nameValue = formData.get("name");
+  const summaryLanguageValue = formData.get("summaryLanguage");
+  const summaryToneValue = formData.get("summaryTone");
   const parsedFields = createRoomSchema.safeParse({
     name: typeof nameValue === "string" ? nameValue : "",
+    summaryLanguage:
+      typeof summaryLanguageValue === "string"
+        ? summaryLanguageValue
+        : DEFAULT_SUMMARY_LANGUAGE,
+    summaryTone:
+      typeof summaryToneValue === "string"
+        ? summaryToneValue
+        : DEFAULT_SUMMARY_TONE,
   });
 
   if (!parsedFields.success) {
@@ -170,6 +202,8 @@ export async function createRoom(
       idToken: teacher.idToken,
       teacherId: teacher.uid,
       roomName: parsedFields.data.name,
+      summaryLanguage: parsedFields.data.summaryLanguage,
+      summaryTone: parsedFields.data.summaryTone,
     });
   } catch (error) {
     console.error("Room creation failed:", error);
@@ -192,10 +226,14 @@ async function createRoomWithUniqueInviteCode({
   idToken,
   teacherId,
   roomName,
+  summaryLanguage,
+  summaryTone,
 }: {
   idToken: string;
   teacherId: string;
   roomName: string;
+  summaryLanguage: SummaryLanguage;
+  summaryTone: SummaryTone;
 }): Promise<CreateRoomState> {
   const maxAttempts = 8;
 
@@ -209,6 +247,8 @@ async function createRoomWithUniqueInviteCode({
       name: roomName,
       invite_code: inviteCode,
       active_section_id: null,
+      summary_language: summaryLanguage,
+      summary_tone: summaryTone,
       is_active: true,
       question_count: 0,
       created_at: now,
@@ -297,6 +337,8 @@ export async function getRoomDetail(
       question_count: room.question_count,
       active_section_id: room.active_section_id,
       active_section_name: activeSectionName,
+      summary_language: normalizeSummaryLanguage(room.summary_language),
+      summary_tone: normalizeSummaryTone(room.summary_tone),
       sections,
       created_at: timestampToDate(room.created_at) || new Date(),
       updated_at: timestampToDate(room.updated_at) || new Date(),

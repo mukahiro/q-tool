@@ -1,4 +1,8 @@
 import { Timestamp } from "firebase/firestore";
+import type {
+  SummaryLanguage,
+  SummaryTone,
+} from "@/features/summary/settings";
 
 /**
  * Firestore rooms/{roomId} ドキュメントに対応する型
@@ -9,6 +13,8 @@ export type Room = {
   name: string;
   invite_code: string;
   active_section_id: string | null;
+  summary_language?: SummaryLanguage;
+  summary_tone?: SummaryTone;
   is_active: boolean;
   question_count: number;
   created_at: Timestamp;
@@ -57,6 +63,8 @@ export type RoomDocument = {
   name: string;
   invite_code: string;
   active_section_id: string | null;
+  summary_language: SummaryLanguage;
+  summary_tone: SummaryTone;
   is_active: boolean;
   question_count: number;
   created_at: Date;
@@ -97,6 +105,8 @@ export type RoomDisplay = {
   question_count: number;
   active_section_id: string | null;
   active_section_name: string | null;
+  summary_language: SummaryLanguage;
+  summary_tone: SummaryTone;
   sections: RoomSectionDisplay[];
   created_at: Date;
   updated_at: Date;
