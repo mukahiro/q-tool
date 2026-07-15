@@ -43,6 +43,8 @@ teachers/{teacherId}
 | name | string | ルーム名（講義名） |
 | invite_code | string | 入室用の短い英数字PIN。QRコードが読めない場合の手入力にも使う |
 | active_section_id | string / null | 現在受付中のセクションID |
+| summary_language | string | AI要約に使用する言語。初期値は `ja` |
+| summary_tone | string | AI要約の口調。`standard`、`ojousama`、`butler`、`friendly` など |
 | is_active | boolean | 現在開講中かどうか |
 | question_count | number | ルーム全体の質問数。教師画面で件数表示に使う |
 | created_at | timestamp | 作成日時 |
@@ -116,6 +118,8 @@ teachers/{teacherId}
 | content | string | 最初に表示する全体要約テキスト |
 | items | array | 要約を項目ごとに分けた配列。各項目に `title`、本文 `text`、参照元の質問ID配列 `source_question_ids` を持つ |
 | source_questions | array | 要約作成時に参照した元質問のスナップショット。質問ID、表示ラベル、本文、リアクション数を保存する |
+| summary_language | string | この要約で使用した言語 |
+| summary_tone | string | この要約で使用した口調 |
 | created_at | timestamp | 生成日時 |
 
 ### 3.7 teachers/{teacherId} (教師プロフィール)

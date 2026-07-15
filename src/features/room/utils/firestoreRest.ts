@@ -154,6 +154,8 @@ function buildRoomDocument(
       name: { stringValue: room.name },
       invite_code: { stringValue: room.invite_code },
       active_section_id: { nullValue: null },
+      summary_language: { stringValue: room.summary_language },
+      summary_tone: { stringValue: room.summary_tone },
       is_active: { booleanValue: room.is_active },
       question_count: { integerValue: String(room.question_count) },
       created_at: { timestampValue: room.created_at.toISOString() },

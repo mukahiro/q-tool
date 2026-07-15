@@ -61,6 +61,8 @@ export async function fetchRoom(
       name: roomData.name,
       invite_code: roomData.invite_code,
       active_section_id: roomData.active_section_id || null,
+      summary_language: roomData.summary_language,
+      summary_tone: roomData.summary_tone,
       is_active: roomData.is_active,
       question_count: roomData.question_count || 0,
       created_at: roomData.created_at,

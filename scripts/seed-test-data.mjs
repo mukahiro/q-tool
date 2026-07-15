@@ -89,6 +89,8 @@ async function main() {
     name: "数学I 二次関数",
     invite_code: "MATH7K",
     active_section_id: "section_math_001_intro",
+    summary_language: "ja",
+    summary_tone: "standard",
     is_active: true,
     question_count: 4,
     created_at: timestamp("2026-06-23T09:00:00+09:00"),
@@ -102,6 +104,8 @@ async function main() {
     name: "日本史 鎌倉時代",
     invite_code: "HIST5R",
     active_section_id: null,
+    summary_language: "ja",
+    summary_tone: "butler",
     is_active: false,
     question_count: 2,
     created_at: timestamp("2026-06-20T10:00:00+09:00"),
@@ -306,6 +310,8 @@ async function main() {
       section_id: "section_math_001_basic",
       content:
         "平方完成の符号ミスに関する質問がありました。特に、定数項を移動するときと、括弧の外に出す値の扱いで混乱が見られます。",
+      summary_language: "ja",
+      summary_tone: "standard",
       categories: [
         {
           title: "平方完成の手順",

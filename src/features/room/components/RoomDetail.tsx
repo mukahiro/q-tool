@@ -6,6 +6,10 @@ import { SectionSummaryModal } from "@/features/question/components/SectionSumma
 import { endRoomAndSummarizeWholeClass } from "@/features/summary/actions";
 import { EndSectionForm } from "@/features/summary/components/EndSectionForm";
 import { SummaryResultContent } from "@/features/summary/components/SummaryResultContent";
+import {
+  getSummaryLanguageLabel,
+  getSummaryToneLabel,
+} from "@/features/summary/settings";
 import type {
   SummaryItem,
   SummarySourceQuestion,
@@ -281,6 +285,10 @@ export function RoomDetail({ room }: { room: RoomDisplay }) {
                 value={roomState.creator_name}
               />
             ) : null}
+            <RoomMetaItem
+              label="要約設定"
+              value={`${getSummaryLanguageLabel(roomState.summary_language)} / ${getSummaryToneLabel(roomState.summary_tone)}`}
+            />
             <RoomMetaItem
               label="作成日時"
               value={formatDate(roomState.created_at)}

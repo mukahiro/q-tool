@@ -13,6 +13,14 @@ import type {
   SummaryItem,
   SummarySourceQuestion,
 } from "./types";
+import {
+  getSummaryLanguageInstruction,
+  getSummaryToneInstruction,
+  normalizeSummaryLanguage,
+  normalizeSummaryTone,
+  type SummaryLanguage,
+  type SummaryTone,
+} from "./settings";
 import { SUMMARY_ERROR_MESSAGES } from "./utils/errors";
 
 type SectionQuestion = {
@@ -26,6 +34,11 @@ type SectionQuestion = {
 type GeneratedSummary = {
   content: string;
   items: SummaryItem[];
+};
+
+type SummarySettings = {
+  language: SummaryLanguage;
+  tone: SummaryTone;
 };
 
 type SummaryItemInput = {
@@ -115,8 +128,11 @@ export async function endActiveSection(
       };
     }
 
+    const summarySettings = getRoomSummarySettings(roomData);
     const questions = await getSectionQuestions(roomId, activeSectionId);
-    const summary = await generateSectionSummary(questions);
+    const summary = await generateSectionSummary(questions, {
+      summarySettings,
+    });
     const sourceQuestions = toSourceQuestions(questions);
     const summaryRef = roomRef.collection("summaries").doc();
 
@@ -157,6 +173,8 @@ export async function endActiveSection(
         content: summary.content,
         items: summary.items,
         source_questions: sourceQuestions,
+        summary_language: summarySettings.language,
+        summary_tone: summarySettings.tone,
         created_at: FieldValue.serverTimestamp(),
       });
 
@@ -241,11 +259,13 @@ export async function endRoomAndSummarizeWholeClass(
       };
     }
 
+    const summarySettings = getRoomSummarySettings(roomData);
     const questions = await getWholeClassQuestions(parsedInput.data.roomId);
     const summary = await generateSectionSummary(questions, {
       emptyContent: "授業全体への質問は投稿されませんでした。",
       emptyTitle: "授業全体への質問なし",
       promptScope: "授業全体に向けて投稿された質問",
+      summarySettings,
     });
     const sourceQuestions = toSourceQuestions(questions);
     const summaryRef = roomRef.collection("summaries").doc();
@@ -274,6 +294,8 @@ export async function endRoomAndSummarizeWholeClass(
         content: summary.content,
         items: summary.items,
         source_questions: sourceQuestions,
+        summary_language: summarySettings.language,
+        summary_tone: summarySettings.tone,
         created_at: FieldValue.serverTimestamp(),
       });
 
@@ -428,6 +450,7 @@ async function generateSectionSummary(
     emptyContent?: string;
     emptyTitle?: string;
     promptScope?: string;
+    summarySettings?: SummarySettings;
   },
 ): Promise<GeneratedSummary> {
   if (questions.length === 0) {
@@ -462,14 +485,27 @@ async function generateSectionSummary(
   });
 
   const result = await model.generateContent(
-    buildSummaryPrompt(questions, options?.promptScope),
+    buildSummaryPrompt(questions, {
+      promptScope: options?.promptScope,
+      summarySettings: options?.summarySettings,
+    }),
   );
   const text = result.response.text().trim();
 
   return parseGeminiSummary(text, questions);
 }
 
-function buildSummaryPrompt(questions: SectionQuestion[], promptScope?: string) {
+function buildSummaryPrompt(
+  questions: SectionQuestion[],
+  options?: {
+    promptScope?: string;
+    summarySettings?: SummarySettings;
+  },
+) {
+  const summarySettings = options?.summarySettings ?? {
+    language: "ja",
+    tone: "standard",
+  };
   const questionLines = questions
     .map(
       (question) =>
@@ -477,9 +513,13 @@ function buildSummaryPrompt(questions: SectionQuestion[], promptScope?: string) 
     )
     .join("\n");
 
-  return `あなたは授業中の質問を整理する日本語の教育アシスタントです。
-次の${promptScope ?? "質問一覧"}を読み、教師が口頭で回答しやすいように要約してください。
+  return `あなたは授業中の質問を整理する教育アシスタントです。
+次の${options?.promptScope ?? "質問一覧"}を読み、教師が口頭で回答しやすいように要約してください。
 empathy_count は学生からの共感数です。summary_weight は要約時の重みで、値が大きい質問ほど優先して扱ってください。
+
+出力設定:
+- 言語: ${getSummaryLanguageInstruction(summarySettings.language)}
+- 口調: ${getSummaryToneInstruction(summarySettings.tone)}
 
 出力は必ず次の JSON だけにしてください。Markdown のコードブロックは使わないでください。
 {
@@ -509,6 +549,13 @@ empathy_count は学生からの共感数です。summary_weight は要約時の
 
 質問一覧:
 ${questionLines}`;
+}
+
+function getRoomSummarySettings(data: DocumentData | undefined): SummarySettings {
+  return {
+    language: normalizeSummaryLanguage(data?.summary_language),
+    tone: normalizeSummaryTone(data?.summary_tone),
+  };
 }
 
 function parseGeminiSummary(

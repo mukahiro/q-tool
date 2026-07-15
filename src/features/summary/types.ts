@@ -1,4 +1,5 @@
 import type { Timestamp } from "firebase/firestore";
+import type { SummaryLanguage, SummaryTone } from "./settings";
 
 export type SummaryItem = {
   title: string;
@@ -21,6 +22,8 @@ export type SummaryDocument = {
   content: string;
   items?: SummaryItem[];
   source_questions?: SummarySourceQuestion[];
+  summary_language?: SummaryLanguage;
+  summary_tone?: SummaryTone;
   created_at: Timestamp;
 };
 
